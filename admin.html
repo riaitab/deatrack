@@ -486,7 +486,7 @@
         doc.save(`Intern_Overzicht_week_${weekTekst}_${chauffeurNaam.replace(/\s+/g, '_')}.pdf`);
     }
 
-    // NIEUWE KLANTFACTUUR (Portrait, alleen omzet/te factureren bedrag)
+   // NIEUWE KLANTFACTUUR (Landscape, met gedetailleerde urenopbouw)
     function genereerKlantFactuur() {
         if (laatstGefilterdeRitten.length === 0) {
             alert("Er zijn geen ritten geselecteerd om een factuur van te maken.");
@@ -494,13 +494,13 @@
         }
 
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('portrait');
+        const doc = new jsPDF('landscape'); // Liggend gemaakt vanwege de vele kolommen
 
         const datumVandaag = new Date().toLocaleDateString('nl-NL');
         const factuurNummer = "F" + new Date().getFullYear() + String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 
         doc.setFontSize(22);
-        doc.setTextColor(0, 86, 179);
+        doc.setTextColor(111, 66, 193); // Paarse tekst voor de titel
         doc.text("FACTUUR", 14, 25);
         
         doc.setFontSize(12);
@@ -509,8 +509,9 @@
         
         doc.setFontSize(10);
         doc.setTextColor(80, 80, 80);
-        doc.text(`Factuurdatum: ${datumVandaag}`, 130, 25);
-        doc.text(`Factuurnummer: ${factuurNummer}`, 130, 31);
+        // Datum en nummer naar rechts geschoven voor landscape
+        doc.text(`Factuurdatum: ${datumVandaag}`, 220, 25);
+        doc.text(`Factuurnummer: ${factuurNummer}`, 220, 31);
         
         const datums = laatstGefilterdeRitten.map(r => new Date(r.datum));
         const minDatum = new Date(Math.min(...datums));
@@ -523,26 +524,73 @@
         doc.text(`${formatDatum(minDatum)} t/m ${formatDatum(maxDatum)}`, 14, 56);
 
         const getChauffeurNaam = (id) => alleChauffeurs.find(c => c.id == id)?.naam || 'Onbekend';
-        const getVrachtwagenKenteken = (id) => alleVrachtwagens.find(v => v.id == id)?.kenteken || 'Onbekend';
         
-        const tableColumn = ["Datum", "Omschrijving", "Chauffeur", "Vrachtwagen", "Uren", "Bedrag"];
+        // Exact de kolommen in de door jou gevraagde volgorde
+        const tableColumn = ["Datum", "Chauffeur", "Ritnummer", "Pauze", "Start", "Eind", "Totaal Uren", "Belastbaar", "Uurtarief", "Bedrag"];
         const tableRows = [];
         
         let somOmzet = 0;
+        let somBelastbaar = 0;
         const gesorteerdeRitten = [...laatstGefilterdeRitten].sort((a, b) => new Date(a.datum) - new Date(b.datum));
 
         gesorteerdeRitten.forEach(rit => {
-            const urenNum = rit.netto_gewerkte_uren ? parseFloat(rit.netto_gewerkte_uren) : 0;
+            const nettoUren = rit.netto_gewerkte_uren ? parseFloat(rit.netto_gewerkte_uren) : 0;
             const omzetNum = rit.totaal_facturatie_bedrag ? parseFloat(rit.totaal_facturatie_bedrag) : 0;
+            
             somOmzet += omzetNum;
+            somBelastbaar += nettoUren;
+
+            // Bereken het uurtarief (omzet gedeeld door netto uren)
+            let uurtarief = 0;
+            if (nettoUren > 0) {
+                uurtarief = omzetNum / nettoUren;
+            }
+
+            // Bereken Bruto Totaal Uren (Belastbare uren + Pauzetijd in uren)
+            const pauzeUren = (rit.pauze_minuten ? parseInt(rit.pauze_minuten) : 0) / 60;
+            const totaalUren = nettoUren + pauzeUren;
 
             tableRows.push([
                 formatDatum(new Date(rit.datum)),
-                rit.rit_omschrijving || '-',
                 getChauffeurNaam(rit.chauffeur_id),
-                getVrachtwagenKenteken(rit.vrachtwagen_id),
-                urenNum.toFixed(2) + " uur",
+                rit.rit_omschrijving || '-',
+                (rit.pauze_minuten || 0) + " min",
+                rit.starttijd || '-',
+                rit.eindtijd || '-',
+                totaalUren.toFixed(2) + " u",
+                nettoUren.toFixed(2) + " u",
+                `€ ${uurtarief.toFixed(2)}`,
                 `€ ${omzetNum.toFixed(2)}`
+            ]);
+        });
+
+        // Voeg de totaal-rij toe
+        tableRows.push([
+            "TOTAAL TE FACTUREREN", "", "", "", "", "", "", 
+            somBelastbaar.toFixed(2) + " u", "",
+            `€ ${somOmzet.toFixed(2)}`
+        ]);
+
+        doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 65,
+            theme: 'grid',
+            headStyles: { fillColor: [111, 66, 193] }, // Mooie paarse kleur, matcht met de knop
+            didParseCell: function(data) {
+                if (data.row.index === tableRows.length - 1) {
+                    data.cell.styles.fontStyle = 'bold';
+                    data.cell.styles.fillColor = [243, 232, 255]; // Licht paars voor de totaalrij
+                }
+            }
+        });
+
+        const finalY = doc.lastAutoTable.finalY || 150;
+        doc.setFontSize(10);
+        doc.text("Wij verzoeken u vriendelijk het bovenstaande bedrag binnen 14 dagen over te maken.", 14, finalY + 15);
+
+        doc.save(`Klantfactuur_DEA_${factuurNummer}.pdf`);
+    }
             ]);
         });
 
