@@ -110,7 +110,7 @@
 
         // --- APP LOGICA ---
         
-        // Simpele, feilloze datum-instelling van vandaag (jouw screenshot)
+        // Simpele, feilloze datum-instelling van vandaag
         document.getElementById('datum').value = new Date().toISOString().split('T')[0];
 
         // Haal chauffeurs en vrachtwagens uit database voor in het keuzemenu
@@ -137,14 +137,6 @@
             }
         }
 
-        // Functie om weeknummer te berekenen uit de datum
-        function getWeekNumber(d) {
-            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-            var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-            return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
-        }
-
         // Als de chauffeur op "Versturen" klikt
         document.getElementById('urenForm').addEventListener('submit', async function(e) {
             e.preventDefault(); // Voorkom dat pagina herlaadt
@@ -157,8 +149,6 @@
             const starttijd = document.getElementById('starttijd').value;
             const eindtijd = document.getElementById('eindtijd').value;
             const pauze_minuten = parseInt(document.getElementById('pauze_minuten').value) || 0;
-
-            const weeknummer = getWeekNumber(new Date(datum));
 
             // Bereken uren
             const start = new Date(`1970-01-01T${starttijd}:00`);
@@ -174,10 +164,9 @@
             const uurloon = chauffeur && chauffeur.uurloon ? parseFloat(chauffeur.uurloon) : 0;
             const totaal_loon_bedrag = nettoUren * uurloon;
 
-            // Database data klaarmaken
+            // Database data klaarmaken (zonder weeknummer, want de database doet dit zelf)
             const opslagData = {
                 datum: datum,
-                weeknummer: weeknummer,
                 rit_omschrijving: rit_omschrijving,
                 chauffeur_id: chauffeur_id,
                 vrachtwagen_id: vrachtwagen_id,
