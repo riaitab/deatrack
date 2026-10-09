@@ -447,7 +447,7 @@
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 
-    // Interne PDF (landscape, met loonkosten)
+    // Interne PDF (landscape, met loonkosten, blauwe kop)
     function genereerPDF() {
         if (laatstGefilterdeRitten.length === 0) return alert("Er zijn geen ritten om een overzicht van te maken.");
         const { jsPDF } = window.jspdf;
@@ -486,7 +486,7 @@
         doc.save(`Intern_Overzicht_week_${weekTekst}_${chauffeurNaam.replace(/\s+/g, '_')}.pdf`);
     }
 
-   // NIEUWE KLANTFACTUUR (Landscape, met gedetailleerde urenopbouw)
+    // NIEUWE KLANTFACTUUR (Landscape, met gedetailleerde urenopbouw en paarse kop)
     function genereerKlantFactuur() {
         if (laatstGefilterdeRitten.length === 0) {
             alert("Er zijn geen ritten geselecteerd om een factuur van te maken.");
@@ -509,7 +509,6 @@
         
         doc.setFontSize(10);
         doc.setTextColor(80, 80, 80);
-        // Datum en nummer naar rechts geschoven voor landscape
         doc.text(`Factuurdatum: ${datumVandaag}`, 220, 25);
         doc.text(`Factuurnummer: ${factuurNummer}`, 220, 31);
         
@@ -581,34 +580,6 @@
                 if (data.row.index === tableRows.length - 1) {
                     data.cell.styles.fontStyle = 'bold';
                     data.cell.styles.fillColor = [243, 232, 255]; // Licht paars voor de totaalrij
-                }
-            }
-        });
-
-        const finalY = doc.lastAutoTable.finalY || 150;
-        doc.setFontSize(10);
-        doc.text("Wij verzoeken u vriendelijk het bovenstaande bedrag binnen 14 dagen over te maken.", 14, finalY + 15);
-
-        doc.save(`Klantfactuur_DEA_${factuurNummer}.pdf`);
-    }
-            ]);
-        });
-
-        tableRows.push([
-            "TOTAAL TE FACTUREREN", "", "", "", "",
-            `€ ${somOmzet.toFixed(2)}`
-        ]);
-
-        doc.autoTable({
-            head: [tableColumn],
-            body: tableRows,
-            startY: 65,
-            theme: 'grid',
-            headStyles: { fillColor: [0, 86, 179] },
-            didParseCell: function(data) {
-                if (data.row.index === tableRows.length - 1) {
-                    data.cell.styles.fontStyle = 'bold';
-                    data.cell.styles.fillColor = [230, 242, 255];
                 }
             }
         });
