@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beheerders Dashboard - DEA</title>
+    <!-- Supabase inladen -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- PDF Bibliotheken inladen -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; margin: 0; display: flex; justify-content: center; }
+        
+        .login-container, .modal-content { background-color: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 400px; margin-top: 50px; }
+        .dashboard-container { background-color: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 1300px; display: none; margin-bottom: 50px; }
+        
+        input, select { width: 100%; padding: 12px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        label { font-weight: bold; color: #555; }
+        
+        .btn-blauw { width: 100%; padding: 15px; background-color: #0056b3; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .btn-blauw:hover { background-color: #004494; }
+        .uitlog-btn { background-color: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .delete-btn { background-color: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
+        .edit-btn { background-color: #ffc107; color: black; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
+        
+        /* Knoppen op de filterbalk */
+        .btn-groen { background-color: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; height: 42px; margin-top: 22px; }
+        .btn-rood { background-color: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; height: 42px; margin-top: 22px; }
+        .btn-rood:hover { background-color: #c82333; }
+        .btn-oranje { background-color: #fd7e14; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; height: 42px; margin-top: 22px; }
+        .btn-oranje:hover { background-color: #e86e04; }
+        .btn-paars { background-color: #6f42c1; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; height: 42px; margin-top: 22px; }
+        .btn-paars:hover { background-color: #59339d; }
+        
+        .actie-knoppen { display: flex; gap: 5px; }
+        .actie-knoppen button { margin: 0; width: auto; flex: 1; padding: 8px; }
+
+        .tab-menu { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        .tab-btn { padding: 12px 20px; background-color: transparent; border: none; font-weight: bold; font-size: 16px; cursor: pointer; color: #555; }
+        .tab-btn.actief { color: #0056b3; border-bottom: 3px solid #0056b3; margin-bottom: -12px; }
+        .tab-btn:hover:not(.actief) { color: #333; }
+
+        .header-balk { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;}
+        h2 { color: #333; margin: 0; }
+        
+        .filter-balk { display: flex; gap: 15px; background-color: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+        .filter-groep { flex: 1; min-width: 150px; }
+        .filter-groep select { margin-bottom: 0; padding: 10px; }
+        .btn-reset { padding: 10px 15px; background-color: #6c757d; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; height: 42px; margin-top: 22px;}
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #0056b3; color: white; }
+        tr:hover { background-color: #f9f9f9; }
+        .bedrag { text-align: right; font-weight: bold; }
+        
+        .totaal-rij { background-color: #d1ecf1; border-top: 3px solid #17a2b8; font-weight: bold; }
+        .totaal-rij td { border-bottom: none; }
+        
+        .stam-grid { display: flex; gap: 20px; flex-wrap: wrap; }
+        .stam-kolom { flex: 1; min-width: 350px; background: #fafafa; padding: 20px; border-radius: 8px; border: 1px solid #ddd; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: flex-start; z-index: 1000; overflow-y: auto; padding-top: 50px; }
+        .modal-knoppen { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-grijs { width: 100%; padding: 15px; background-color: #ccc; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; display: inline-block; }
+        .status-te-controleren { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .status-gecontroleerd { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    </style>
+</head>
+<body>
+
+<div id="loginScherm" class="login-container">
+    <h2 style="text-align: center; border: none; margin-bottom: 20px;">Beheerder Inloggen</h2>
+    <form id="loginForm">
+        <label>E-mailadres</label>
+        <input type="email" id="email" required placeholder="jouw@email.nl">
+        <label>Wachtwoord</label>
+        <input type="password" id="password" required placeholder="••••••••">
+        <button type="submit" class="btn-blauw">Inloggen</button>
+    </form>
+</div>
+
+<div id="dashboardScherm" class="dashboard-container">
+    <div class="header-balk">
+        <h2>Delivery Express Amsterdam</h2>
+        <button id="logoutBtn" class="uitlog-btn">Uitloggen</button>
+    </div>
+
+    <!-- TAB MENU -->
+    <div class="tab-menu">
+        <button id="tabBtnRitten" class="tab-btn actief" onclick="wisselTab('ritten')">Ritten Overzicht</button>
+        <button id="tabBtnStam" class="tab-btn" onclick="wisselTab('stam')">Stamgegevens</button>
+    </div>
+
+    <!-- TAB: RITTEN -->
+    <div id="tabRitten">
+        <div class="filter-balk">
+            <div class="filter-groep">
+                <label>Chauffeur</label>
+                <select id="filterChauffeur" onchange="pasFiltersToe()"><option value="">Alle Chauffeurs</option></select>
+            </div>
+            <div class="filter-groep">
+                <label>Periode (4 Weken)</label>
+                <select id="filterPeriode" onchange="pasFiltersToe()"><option value="">Alle Periodes</option></select>
+            </div>
+            <div class="filter-groep">
+                <label>Specifieke Week</label>
+                <select id="filterWeek" onchange="pasFiltersToe()"><option value="">Alle Weken</option></select>
+            </div>
+            <button class="btn-reset" onclick="resetFilters()">Wis Filters</button>
+            <button class="btn-oranje" onclick="markeerGefilterdAlsGecontroleerd()">Markeer Gecontroleerd</button>
+            <button class="btn-groen" onclick="exporteerNaarCSV()">CSV Download</button>
+            <button class="btn-rood" onclick="genereerPDF()">Maak PDF Overzicht</button>
+            <button class="btn-paars" onclick="genereerKlantFactuur()">Maak Klantfactuur</button>
+        </div>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Datum</th><th>Ritnummer</th><th>Chauffeur</th><th>Vrachtwagen</th>
+                        <th>Tijden & Pauze</th><th>Netto Uren</th><th class="bedrag">Loonkosten</th>
+                        <th class="bedrag">Omzet</th><th>Status</th><th style="min-width: 80px;">Acties</th>
+                    </tr>
+                </thead>
+                <tbody id="rittenTabel"><tr><td colspan="10" style="text-align: center;">Gegevens laden...</td></tr></tbody>
+                <tfoot>
+                    <tr class="totaal-rij">
+                        <td colspan="5" style="text-align: right;">Totalen (Gefilterd):</td>
+                        <td id="totaalUren">0.00 uur</td><td class="bedrag" id="totaalLoon">€ 0.00</td>
+                        <td class="bedrag" style="color: green;" id="totaalOmzet">€ 0.00</td><td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB: STAMGEGEVENS -->
+    <div id="tabStam" style="display: none;">
+        <div class="stam-grid">
+            <div class="stam-kolom">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0056b3; padding-bottom: 10px;">
+                    <h3 style="margin: 0;">Chauffeurs</h3>
+                    <button class="btn-groen" style="margin: 0; padding: 6px 12px; height: auto;" onclick="openChauffeurModal()">+ Nieuw</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>Naam</th><th>Uurloon</th><th style="width: 130px;">Acties</th></tr>
+                    </thead>
+                    <tbody id="lijstChauffeurs"></tbody>
+                </table>
+            </div>
+            <div class="stam-kolom">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0056b3; padding-bottom: 10px;">
+                    <h3 style="margin: 0;">Vrachtwagens</h3>
+                    <button class="btn-groen" style="margin: 0; padding: 6px 12px; height: auto;" onclick="openVrachtwagenModal()">+ Nieuw</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>Kenteken</th><th style="width: 130px;">Acties</th></tr>
+                    </thead>
+                    <tbody id="lijstVrachtwagens"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: BEWERK RIT -->
+<div id="bewerkModal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">Rit Bewerken</h2>
+        <form id="bewerkForm">
+            <label>Datum</label><input type="date" id="editDatum" required>
+            <label>Ritnummer</label><input type="text" id="editRitnummer">
+            <label>Starttijd</label><input type="time" id="editStarttijd" required>
+            <label>Eindtijd</label><input type="time" id="editEindtijd" required>
+            <label>Pauze (in minuten)</label><input type="number" id="editPauze" required>
+            <label>Status</label>
+            <select id="editStatus">
+                <option value="Te controleren">Te controleren</option>
+                <option value="Gecontroleerd">Gecontroleerd</option>
+            </select>
+            <div class="modal-knoppen">
+                <button type="button" class="btn-grijs" onclick="sluitBewerkScherm()">Annuleren</button>
+                <button type="submit" class="btn-blauw">Opslaan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: CHAUFFEUR BEHEREN -->
+<div id="chauffeurModal" class="modal">
+    <div class="modal-content">
+        <h2 id="chauffeurModalTitel" style="margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">Chauffeur Toevoegen</h2>
+        <form id="chauffeurForm">
+            <label>Naam</label>
+            <input type="text" id="chNaam" required placeholder="Bijv: Fadi">
+            <label>Uurloon (€)</label>
+            <input type="number" step="0.01" id="chLoon" required placeholder="Bijv: 15.50">
+            <div class="modal-knoppen">
+                <button type="button" class="btn-grijs" onclick="sluitChauffeurModal()">Annuleren</button>
+                <button type="submit" class="btn-blauw">Opslaan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: VRACHTWAGEN BEHEREN -->
+<div id="vrachtwagenModal" class="modal">
+    <div class="modal-content">
+        <h2 id="vrachtwagenModalTitel" style="margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">Vrachtwagen Toevoegen</h2>
+        <form id="vrachtwagenForm">
+            <label>Kenteken</label>
+            <input type="text" id="vrKenteken" required placeholder="Bijv: AB-123-C">
+            <div class="modal-knoppen">
+                <button type="button" class="btn-grijs" onclick="sluitVrachtwagenModal()">Annuleren</button>
+                <button type="submit" class="btn-blauw">Opslaan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://lmclewyqceztcsvqkoaf.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_gv68Kwlf5w0P8bry7hMBaw_SrE_sAjS';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    let alleOpgeslagenRitten = []; let alleChauffeurs = []; let alleVrachtwagens = [];
+    let actieveBewerkId = null; let actieveChauffeurId = null; let actieveVrachtwagenId = null;
+    let laatstGefilterdeRitten = []; 
+
+    async function checkLogin() {
+        const { data: { user }, error } = await db.auth.getUser();
+        if (user && !error) toonDashboard();
+        else {
+            await db.auth.signOut();
+            document.getElementById('dashboardScherm').style.display = 'none';
+            document.getElementById('loginScherm').style.display = 'block';
+        }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { error } = await db.auth.signInWithPassword({ email, password });
+        if (error) alert("Inloggen mislukt: Controleer je gegevens.");
+        else { document.getElementById('loginForm').reset(); toonDashboard(); }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async function() {
+        await db.auth.signOut();
+        document.getElementById('dashboardScherm').style.display = 'none';
+        document.getElementById('loginScherm').style.display = 'block';
+    });
+
+    function toonDashboard() {
+        document.getElementById('loginScherm').style.display = 'none';
+        document.getElementById('dashboardScherm').style.display = 'block';
+        laadDashboard();
+    }
+
+    function wisselTab(tab) {
+        document.getElementById('tabRitten').style.display = tab === 'ritten' ? 'block' : 'none';
+        document.getElementById('tabStam').style.display = tab === 'stam' ? 'block' : 'none';
+        document.getElementById('tabBtnRitten').className = tab === 'ritten' ? 'tab-btn actief' : 'tab-btn';
+        document.getElementById('tabBtnStam').className = tab === 'stam' ? 'tab-btn actief' : 'tab-btn';
+    }
+
+    async function laadDashboard() {
+        const { data: c } = await db.from('chauffeurs').select('*').order('naam');
+        const { data: v } = await db.from('vrachtwagens').select('*').order('kenteken');
+        const { data: r, error } = await db.from('urenregistratie').select('*').order('datum', { ascending: false });
+
+        if (error) { document.getElementById('rittenTabel').innerHTML = `<tr><td colspan="10" style="color: red;">Fout bij laden: ${error.message}</td></tr>`; return; }
+
+        alleChauffeurs = c || []; alleVrachtwagens = v || []; alleOpgeslagenRitten = r || [];
+
+        vulFilterOpties();
+        pasFiltersToe(); 
+        tekenStamgegevens(); 
+    }
+
+    function tekenStamgegevens() {
+        const lijstCh = document.getElementById('lijstChauffeurs');
+        lijstCh.innerHTML = '';
+        alleChauffeurs.forEach(c => {
+            const loonTekst = c.uurloon ? `€ ${parseFloat(c.uurloon).toFixed(2)}` : '€ 0.00';
+            lijstCh.innerHTML += `<tr><td><strong>${c.naam}</strong></td><td>${loonTekst}</td>
+                <td><div class="actie-knoppen"><button class="edit-btn" onclick="openChauffeurModal(${c.id})">✎</button><button class="delete-btn" onclick="verwijderChauffeur(${c.id})">✖</button></div></td></tr>`;
+        });
+
+        const lijstVr = document.getElementById('lijstVrachtwagens');
+        lijstVr.innerHTML = '';
+        alleVrachtwagens.forEach(v => {
+            lijstVr.innerHTML += `<tr><td><strong>${v.kenteken}</strong></td>
+                <td><div class="actie-knoppen"><button class="edit-btn" onclick="openVrachtwagenModal(${v.id})">✎</button><button class="delete-btn" onclick="verwijderVrachtwagen(${v.id})">✖</button></div></td></tr>`;
+        });
+    }
+
+    function openChauffeurModal(id = null) {
+        actieveChauffeurId = id;
+        if (id) {
+            const ch = alleChauffeurs.find(c => c.id === id);
+            document.getElementById('chNaam').value = ch.naam; document.getElementById('chLoon').value = ch.uurloon || '';
+            document.getElementById('chauffeurModalTitel').innerText = "Chauffeur Bewerken";
+        } else {
+            document.getElementById('chauffeurForm').reset(); document.getElementById('chauffeurModalTitel').innerText = "Nieuwe Chauffeur";
+        }
+        document.getElementById('chauffeurModal').style.display = 'flex';
+    }
+    function sluitChauffeurModal() { document.getElementById('chauffeurModal').style.display = 'none'; actieveChauffeurId = null; }
+
+    document.getElementById('chauffeurForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const opslagData = { naam: document.getElementById('chNaam').value, uurloon: parseFloat(document.getElementById('chLoon').value) };
+        let resultaat = actieveChauffeurId ? await db.from('chauffeurs').update(opslagData).eq('id', actieveChauffeurId) : await db.from('chauffeurs').insert(opslagData);
+        if (resultaat.error) alert("Fout: " + resultaat.error.message); else { sluitChauffeurModal(); laadDashboard(); }
+    });
+    async function verwijderChauffeur(id) { if (!confirm("Weet je zeker dat je deze chauffeur wilt wissen?")) return; const { error } = await db.from('chauffeurs').delete().eq('id', id); if (error) alert("Fout: " + error.message); else laadDashboard(); }
+
+    function openVrachtwagenModal(id = null) {
+        actieveVrachtwagenId = id;
+        if (id) {
+            document.getElementById('vrKenteken').value = alleVrachtwagens.find(v => v.id === id).kenteken;
+            document.getElementById('vrachtwagenModalTitel').innerText = "Vrachtwagen Bewerken";
+        } else {
+            document.getElementById('vrachtwagenForm').reset(); document.getElementById('vrachtwagenModalTitel').innerText = "Nieuwe Vrachtwagen";
+        }
+        document.getElementById('vrachtwagenModal').style.display = 'flex';
+    }
+    function sluitVrachtwagenModal() { document.getElementById('vrachtwagenModal').style.display = 'none'; actieveVrachtwagenId = null; }
+
+    document.getElementById('vrachtwagenForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const opslagData = { kenteken: document.getElementById('vrKenteken').value };
+        let resultaat = actieveVrachtwagenId ? await db.from('vrachtwagens').update(opslagData).eq('id', actieveVrachtwagenId) : await db.from('vrachtwagens').insert(opslagData);
+        if (resultaat.error) alert("Fout: " + resultaat.error.message); else { sluitVrachtwagenModal(); laadDashboard(); }
+    });
+    async function verwijderVrachtwagen(id) { if (!confirm("Weet je zeker dat je deze vrachtwagen wilt wissen?")) return; const { error } = await db.from('vrachtwagens').delete().eq('id', id); if (error) alert("Fout: " + error.message); else laadDashboard(); }
+
+    function vulFilterOpties() {
+        const chSelect = document.getElementById('filterChauffeur');
+        chSelect.innerHTML = '<option value="">Alle Chauffeurs</option>';
+        alleChauffeurs.forEach(c => chSelect.innerHTML += `<option value="${c.id}">${c.naam}</option>`);
+
+        let weken = new Set(); let periodes = new Set();
+        alleOpgeslagenRitten.forEach(rit => {
+            if (rit.weeknummer) { weken.add(rit.weeknummer); periodes.add(Math.ceil(rit.weeknummer / 4)); }
+        });
+
+        const wkSelect = document.getElementById('filterWeek'); wkSelect.innerHTML = '<option value="">Alle Weken</option>';
+        [...weken].sort((a, b) => b - a).forEach(w => wkSelect.innerHTML += `<option value="${w}">Week ${w}</option>`);
+
+        const perSelect = document.getElementById('filterPeriode'); perSelect.innerHTML = '<option value="">Alle Periodes</option>';
+        [...periodes].sort((a, b) => b - a).forEach(p => perSelect.innerHTML += `<option value="${p}">Periode ${p} (Wk ${(p*4)-3} t/m ${p*4})</option>`);
+    }
+
+    function pasFiltersToe() {
+        const chauffeurId = document.getElementById('filterChauffeur').value;
+        const periodeNummer = document.getElementById('filterPeriode').value;
+        const weekNummer = document.getElementById('filterWeek').value;
+
+        laatstGefilterdeRitten = alleOpgeslagenRitten;
+        if (chauffeurId) laatstGefilterdeRitten = laatstGefilterdeRitten.filter(rit => rit.chauffeur_id == chauffeurId);
+        if (periodeNummer) laatstGefilterdeRitten = laatstGefilterdeRitten.filter(rit => Math.ceil(rit.weeknummer / 4) == periodeNummer);
+        if (weekNummer) laatstGefilterdeRitten = laatstGefilterdeRitten.filter(rit => rit.weeknummer == weekNummer);
+
+        tekenTabel(laatstGefilterdeRitten);
+    }
+
+    function resetFilters() { document.getElementById('filterChauffeur').value = ''; document.getElementById('filterPeriode').value = ''; document.getElementById('filterWeek').value = ''; pasFiltersToe(); }
+
+    function tekenTabel(rittenLijst) {
+        const tabelBody = document.getElementById('rittenTabel');
+        if (rittenLijst.length === 0) {
+            tabelBody.innerHTML = '<tr><td colspan="10" style="text-align: center;">Geen ritten.</td></tr>';
+            document.getElementById('totaalUren').innerText = '0.00 uur'; document.getElementById('totaalLoon').innerText = '€ 0.00'; document.getElementById('totaalOmzet').innerText = '€ 0.00';
+            return;
+        }
+
+        tabelBody.innerHTML = ''; let somUren = 0; let somLoon = 0; let somOmzet = 0;
+        const getChauffeurNaam = (id) => alleChauffeurs.find(c => c.id == id)?.naam || 'Onbekend';
+        const getVrachtwagenKenteken = (id) => alleVrachtwagens.find(v => v.id == id)?.kenteken || 'Onbekend';
+
+        rittenLijst.forEach(rit => {
+            const urenNum = rit.netto_gewerkte_uren ? parseFloat(rit.netto_gewerkte_uren) : 0;
+            const loonNum = rit.totaal_loon_bedrag ? parseFloat(rit.totaal_loon_bedrag) : 0;
+            const omzetNum = rit.totaal_facturatie_bedrag ? parseFloat(rit.totaal_facturatie_bedrag) : 0;
+            somUren += urenNum; somLoon += loonNum; somOmzet += omzetNum;
+
+            const statusTekst = rit.status || 'Te controleren';
+            const statusClass = statusTekst === 'Gecontroleerd' ? 'status-gecontroleerd' : 'status-te-controleren';
+
+            tabelBody.innerHTML += `<tr>
+                <td><strong>${rit.datum}</strong><br><small>Wk ${rit.weeknummer || '?'}</small></td>
+                <td><strong>${rit.rit_omschrijving || '-'}</strong></td>
+                <td>${getChauffeurNaam(rit.chauffeur_id)}</td>
+                <td>${getVrachtwagenKenteken(rit.vrachtwagen_id)}</td>
+                <td class="tijden-kolom">${rit.starttijd} - ${rit.eindtijd}<br>${rit.pauze_minuten} m pauze</td>
+                <td>${urenNum.toFixed(2)} uur</td><td class="bedrag">€ ${loonNum.toFixed(2)}</td><td class="bedrag" style="color: green;">€ ${omzetNum.toFixed(2)}</td>
+                <td><span class="status-badge ${statusClass}">${statusTekst}</span></td>
+                <td>
+                    <button class="edit-btn" style="margin-bottom: 5px;" onclick="openBewerkScherm(${rit.id})">✎</button>
+                    <button class="delete-btn" style="margin-top: 0;" onclick="verwijderRit(${rit.id})">✖</button>
+                </td>
+            </tr>`;
+        });
+
+        document.getElementById('totaalUren').innerText = `${somUren.toFixed(2)} uur`;
+        document.getElementById('totaalLoon').innerText = `€ ${somLoon.toFixed(2)}`;
+        document.getElementById('totaalOmzet').innerText = `€ ${somOmzet.toFixed(2)}`;
+    }
+
+    async function markeerGefilterdAlsGecontroleerd() {
+        if (laatstGefilterdeRitten.length === 0) return alert("Er zijn geen ritten geselecteerd.");
+        if (!confirm(`Weet je zeker dat je alle ${laatstGefilterdeRitten.length} getoonde ritten als 'Gecontroleerd' wilt markeren?`)) return;
+
+        const ritIds = laatstGefilterdeRitten.map(rit => rit.id);
+        const { error } = await db.from('urenregistratie').update({ status: 'Gecontroleerd' }).in('id', ritIds);
+        if (error) alert("Fout: " + error.message); else { alert("Succes!"); laadDashboard(); }
+    }
+
+    function exporteerNaarCSV() {
+        if (laatstGefilterdeRitten.length === 0) return alert("Geen ritten om te exporteren.");
+        let csvInhoud = "Datum;Week;Ritnummer;Chauffeur;Vrachtwagen;Starttijd;Eindtijd;Pauze (min);Netto Uren;Loonkosten;Omzet;Status\n";
+        const getChauffeurNaam = (id) => alleChauffeurs.find(c => c.id == id)?.naam || 'Onbekend';
+        const getVrachtwagenKenteken = (id) => alleVrachtwagens.find(v => v.id == id)?.kenteken || 'Onbekend';
+
+        laatstGefilterdeRitten.forEach(rit => {
+            let uren = rit.netto_gewerkte_uren || 0; let loon = rit.totaal_loon_bedrag || 0; let omzet = rit.totaal_facturatie_bedrag || 0;
+            let status = rit.status || 'Te controleren';
+            let rij = [
+                rit.datum, rit.weeknummer || '', rit.rit_omschrijving || '-', getChauffeurNaam(rit.chauffeur_id), getVrachtwagenKenteken(rit.vrachtwagen_id),
+                rit.starttijd, rit.eindtijd, rit.pauze_minuten, String(uren).replace('.', ','), String(loon).replace('.', ','), String(omzet).replace('.', ','), status
+            ];
+            csvInhoud += rij.map(waarde => `"${waarde}"`).join(";") + "\n";
+        });
+        let blob = new Blob(["\uFEFF" + csvInhoud], { type: 'text/csv;charset=utf-8;' });
+        let link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(blob));
+        link.setAttribute("download", `Urenregistratie_DEA_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+
+    // Interne PDF (landscape, met loonkosten)
+    function genereerPDF() {
+        if (laatstGefilterdeRitten.length === 0) return alert("Er zijn geen ritten om een overzicht van te maken.");
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape');
+        
+        const chSelect = document.getElementById('filterChauffeur');
+        const chauffeurNaam = chSelect.value ? chSelect.options[chSelect.selectedIndex].text : 'Alle Chauffeurs';
+        const weekSelect = document.getElementById('filterWeek').value;
+        const weekTekst = weekSelect ? weekSelect : 'Alle';
+        const datums = laatstGefilterdeRitten.map(r => new Date(r.datum));
+        const minDatum = new Date(Math.min(...datums));
+        const maxDatum = new Date(Math.max(...datums));
+        const formatDatum = (d) => `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
+        
+        doc.setFontSize(18); doc.setTextColor(0, 86, 179); 
+        doc.text(`Intern Weekoverzicht week ${weekTekst} - ${chauffeurNaam}`, 14, 20);
+        doc.setFontSize(14); doc.setTextColor(0, 0, 0); doc.text("Delivery Express Amsterdam", 14, 28);
+        doc.setFontSize(11); doc.setTextColor(80, 80, 80); doc.text(`Periode: ${formatDatum(minDatum)} t/m ${formatDatum(maxDatum)}`, 14, 38);
+        
+        const getChauffeurNaam = (id) => alleChauffeurs.find(c => c.id == id)?.naam || 'Onbekend';
+        const getVrachtwagenKenteken = (id) => alleVrachtwagens.find(v => v.id == id)?.kenteken || 'Onbekend';
+        const tableColumn = ["Datum", "Ritnummer", "Chauffeur", "Vrachtwagen", "Tijden", "Netto Uren", "Loonkosten", "Omzet"];
+        const tableRows = [];
+        let somUren = 0; let somLoon = 0; let somOmzet = 0;
+        
+        [...laatstGefilterdeRitten].sort((a, b) => new Date(a.datum) - new Date(b.datum)).forEach(rit => {
+            const urenNum = rit.netto_gewerkte_uren ? parseFloat(rit.netto_gewerkte_uren) : 0;
+            const loonNum = rit.totaal_loon_bedrag ? parseFloat(rit.totaal_loon_bedrag) : 0;
+            const omzetNum = rit.totaal_facturatie_bedrag ? parseFloat(rit.totaal_facturatie_bedrag) : 0;
+            somUren += urenNum; somLoon += loonNum; somOmzet += omzetNum;
+            tableRows.push([ formatDatum(new Date(rit.datum)), rit.rit_omschrijving || '-', getChauffeurNaam(rit.chauffeur_id), getVrachtwagenKenteken(rit.vrachtwagen_id), `${rit.starttijd} - ${rit.eindtijd}`, urenNum.toFixed(2), `€ ${loonNum.toFixed(2)}`, `€ ${omzetNum.toFixed(2)}` ]);
+        });
+        tableRows.push([ "TOTAAL", "", "", "", "", somUren.toFixed(2) + " uur", "€ " + somLoon.toFixed(2), "€ " + somOmzet.toFixed(2) ]);
+        
+        doc.autoTable({ head: [tableColumn], body: tableRows, startY: 50, theme: 'grid', headStyles: { fillColor: [0, 86, 179] }, didParseCell: function(data) { if (data.row.index === tableRows.length - 1) { data.cell.styles.fontStyle = 'bold'; data.cell.styles.fillColor = [230, 242, 255]; } }});
+        doc.save(`Intern_Overzicht_week_${weekTekst}_${chauffeurNaam.replace(/\s+/g, '_')}.pdf`);
+    }
+
+    // NIEUWE KLANTFACTUUR (Portrait, alleen omzet/te factureren bedrag)
+    function genereerKlantFactuur() {
+        if (laatstGefilterdeRitten.length === 0) {
+            alert("Er zijn geen ritten geselecteerd om een factuur van te maken.");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('portrait');
+
+        const datumVandaag = new Date().toLocaleDateString('nl-NL');
+        const factuurNummer = "F" + new Date().getFullYear() + String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+
+        doc.setFontSize(22);
+        doc.setTextColor(0, 86, 179);
+        doc.text("FACTUUR", 14, 25);
+        
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text("Delivery Express Amsterdam", 14, 35);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(80, 80, 80);
+        doc.text(`Factuurdatum: ${datumVandaag}`, 130, 25);
+        doc.text(`Factuurnummer: ${factuurNummer}`, 130, 31);
+        
+        const datums = laatstGefilterdeRitten.map(r => new Date(r.datum));
+        const minDatum = new Date(Math.min(...datums));
+        const maxDatum = new Date(Math.max(...datums));
+        const formatDatum = (d) => `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
+        
+        doc.setFontSize(11);
+        doc.setTextColor(0, 0, 0);
+        doc.text("Geleverde diensten voor periode:", 14, 50);
+        doc.text(`${formatDatum(minDatum)} t/m ${formatDatum(maxDatum)}`, 14, 56);
+
+        const getChauffeurNaam = (id) => alleChauffeurs.find(c => c.id == id)?.naam || 'Onbekend';
+        const getVrachtwagenKenteken = (id) => alleVrachtwagens.find(v => v.id == id)?.kenteken || 'Onbekend';
+        
+        const tableColumn = ["Datum", "Omschrijving", "Chauffeur", "Vrachtwagen", "Uren", "Bedrag"];
+        const tableRows = [];
+        
+        let somOmzet = 0;
+        const gesorteerdeRitten = [...laatstGefilterdeRitten].sort((a, b) => new Date(a.datum) - new Date(b.datum));
+
+        gesorteerdeRitten.forEach(rit => {
+            const urenNum = rit.netto_gewerkte_uren ? parseFloat(rit.netto_gewerkte_uren) : 0;
+            const omzetNum = rit.totaal_facturatie_bedrag ? parseFloat(rit.totaal_facturatie_bedrag) : 0;
+            somOmzet += omzetNum;
+
+            tableRows.push([
+                formatDatum(new Date(rit.datum)),
+                rit.rit_omschrijving || '-',
+                getChauffeurNaam(rit.chauffeur_id),
+                getVrachtwagenKenteken(rit.vrachtwagen_id),
+                urenNum.toFixed(2) + " uur",
+                `€ ${omzetNum.toFixed(2)}`
+            ]);
+        });
+
+        tableRows.push([
+            "TOTAAL TE FACTUREREN", "", "", "", "",
+            `€ ${somOmzet.toFixed(2)}`
+        ]);
+
+        doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 65,
+            theme: 'grid',
+            headStyles: { fillColor: [0, 86, 179] },
+            didParseCell: function(data) {
+                if (data.row.index === tableRows.length - 1) {
+                    data.cell.styles.fontStyle = 'bold';
+                    data.cell.styles.fillColor = [230, 242, 255];
+                }
+            }
+        });
+
+        const finalY = doc.lastAutoTable.finalY || 150;
+        doc.setFontSize(10);
+        doc.text("Wij verzoeken u vriendelijk het bovenstaande bedrag binnen 14 dagen over te maken.", 14, finalY + 15);
+
+        doc.save(`Klantfactuur_DEA_${factuurNummer}.pdf`);
+    }
+
+    function openBewerkScherm(id) {
+        const rit = alleOpgeslagenRitten.find(r => r.id === id);
+        if (!rit) return; actieveBewerkId = id;
+        document.getElementById('editDatum').value = rit.datum; 
+        document.getElementById('editRitnummer').value = rit.rit_omschrijving || '';
+        document.getElementById('editStarttijd').value = rit.starttijd; 
+        document.getElementById('editEindtijd').value = rit.eindtijd;
+        document.getElementById('editPauze').value = rit.pauze_minuten;
+        document.getElementById('editStatus').value = rit.status || 'Te controleren';
+        document.getElementById('bewerkModal').style.display = 'flex';
+    }
+    function sluitBewerkScherm() { document.getElementById('bewerkModal').style.display = 'none'; actieveBewerkId = null; }
+    
+    document.getElementById('bewerkForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const updateData = { 
+            datum: document.getElementById('editDatum').value, 
+            rit_omschrijving: document.getElementById('editRitnummer').value, 
+            starttijd: document.getElementById('editStarttijd').value, 
+            eindtijd: document.getElementById('editEindtijd').value, 
+            pauze_minuten: document.getElementById('editPauze').value,
+            status: document.getElementById('editStatus').value
+        };
+        const { error } = await db.from('urenregistratie').update(updateData).eq('id', actieveBewerkId);
+        if (error) alert("Fout: " + error.message); else { sluitBewerkScherm(); laadDashboard(); }
+    });
+    
+    async function verwijderRit(id) { if (!confirm("Weet je zeker dat je deze rit wilt wissen?")) return; const { error } = await db.from('urenregistratie').delete().eq('id', id); if (error) alert("Fout: " + error.message); else laadDashboard(); }
+
+    checkLogin();
+</script>
+
+</body>
+</html>

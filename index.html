@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Urenregistratie - Delivery Express Amsterdam</title>
+    <!-- Supabase inladen -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --primary-hover: #004494;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333;
+            --text-muted: #666;
+            --border-color: #dce1e6;
+            --success-color: #28a745;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            padding: 20px 15px;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 480px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            padding: 30px 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+        }
+
+        .header h1 {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 14px; 
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px; 
+            background-color: #fcfcfc;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+        }
+
+        .time-row {
+            display: flex;
+            gap: 15px;
+        }
+        .time-row .form-group {
+            flex: 1;
+            margin-bottom: 18px;
+        }
+
+        .submit-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        .submit-btn:active { transform: scale(0.98); }
+        .submit-btn:hover { background-color: var(--primary-hover); }
+
+        .success-msg {
+            display: none;
+            background-color: #e8f5e9;
+            color: var(--success-color);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border: 1px solid #c8e6c9;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <h1>Delivery Express Amsterdam</h1>
+        <p>Digitale Urenregistratie</p>
+    </div>
+
+    <div id="succesMelding" class="success-msg">
+        ✓ Rit succesvol opgeslagen!
+    </div>
+
+    <form id="urenForm">
+        <div class="form-group">
+            <label for="datum">Datum</label>
+            <input type="date" id="datum" required>
+        </div>
+
+        <div class="form-group">
+            <label for="ritnummer">Ritnummer / Omschrijving</label>
+            <input type="text" id="ritnummer" placeholder="Bijv: Rit Amsterdam" required>
+        </div>
+
+        <div class="form-group">
+            <label for="chauffeur">Chauffeur</label>
+            <select id="chauffeur" required>
+                <option value="" disabled selected>Kies een chauffeur...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="vrachtwagen">Vrachtwagen (Kenteken)</label>
+            <select id="vrachtwagen" required>
+                <option value="" disabled selected>Kies een vrachtwagen...</option>
+            </select>
+        </div>
+
+        <div class="time-row">
+            <div class="form-group">
+                <label for="starttijd">Starttijd</label>
+                <input type="time" id="starttijd" required>
+            </div>
+            <div class="form-group">
+                <label for="eindtijd">Eindtijd</label>
+                <input type="time" id="eindtijd" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="pauze">Pauze (in minuten)</label>
+            <input type="number" id="pauze" placeholder="Bijv: 45" required min="0">
+        </div>
+
+        <button type="submit" class="submit-btn" id="verzendKnop">Rit Opslaan</button>
+    </form>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://lmclewyqceztcsvqkoaf.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_gv68Kwlf5w0P8bry7hMBaw_SrE_sAjS';
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Eenvoudige, feilloze datum-instelling zoals in de originele werkende versie
+    document.getElementById('datum').value = new Date().toISOString().split('T')[0];
+
+    async function laadDropdowns() {
+        const { data: chauffeurs } = await db.from('chauffeurs').select('*').order('naam');
+        const { data: vrachtwagens } = await db.from('vrachtwagens').select('*').order('kenteken');
+
+        const chSelect = document.getElementById('chauffeur');
+        const vrSelect = document.getElementById('vrachtwagen');
+
+        if (chauffeurs) {
+            chauffeurs.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.naam;
+                chSelect.appendChild(opt);
+            });
+        }
+
+        if (vrachtwagens) {
+            vrachtwagens.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.textContent = v.kenteken;
+                vrSelect.appendChild(opt);
+            });
+        }
+    }
+
+    document.getElementById('urenForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const knop = document.getElementById('verzendKnop');
+        knop.innerText = "Bezig met opslaan...";
+        knop.disabled = true;
+        knop.style.opacity = "0.7";
+
+        // We sturen de basisgegevens exact in zoals de oude code deed, 
+        // zonder ingewikkelde handmatige weeknummer-berekeningen die mislukten.
+        const ritGegevens = {
+            datum: document.getElementById('datum').value,
+            rit_omschrijving: document.getElementById('ritnummer').value,
+            chauffeur_id: document.getElementById('chauffeur').value,
+            vrachtwagen_id: document.getElementById('vrachtwagen').value,
+            starttijd: document.getElementById('starttijd').value,
+            eindtijd: document.getElementById('eindtijd').value,
+            pauze_minuten: document.getElementById('pauze').value
+        };
+
+        const { error } = await db.from('urenregistratie').insert([ritGegevens]);
+
+        if (error) {
+            alert("Er is iets misgegaan: " + error.message);
+            knop.innerText = "Rit Opslaan";
+            knop.disabled = false;
+            knop.style.opacity = "1";
+        } else {
+            document.getElementById('succesMelding').style.display = 'block';
+            document.getElementById('urenForm').reset();
+            document.getElementById('datum').value = new Date().toISOString().split('T')[0];
+            
+            knop.innerText = "Rit Opslaan";
+            knop.disabled = false;
+            knop.style.opacity = "1";
+            
+            setTimeout(() => {
+                document.getElementById('succesMelding').style.display = 'none';
+            }, 5000);
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+
+    laadDropdowns();
+</script>
+
+</body>
+</html>
