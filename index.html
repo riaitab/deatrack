@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Urenregistratie - Delivery Express Amsterdam</title>
+
+    <!-- App-instellingen voor iPhone (iOS) en Android Home Screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Delivr Express">
+    <meta name="theme-color" content="#1B315E">
+
+    <!-- Links voor Home Screen icoon en Favicon (worden automatisch gevuld door het script) -->
+    <link id="appTouchIcon" rel="apple-touch-icon" href="">
+    <link id="appFavicon" rel="icon" type="image/png" href="">
+    <link id="appManifest" rel="manifest" href="">
+
+    <!-- Laad het juiste lettertype (Montserrat 800 & 900) voor het logo -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&display=swap" rel="stylesheet">
+
     <!-- Supabase inladen -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -31,6 +46,18 @@
         
         /* Verberg de app totdat er is ingelogd */
         #appScherm { display: none; padding-top: 50px; /* Ruimte voor de vlaggen */ }
+
+        /* DELIVR EXPRESS AMSTERDAM LOGO STYLING */
+        .delivr-logo-container {
+            display: block;
+            width: 210px;
+            margin: 0 auto 15px auto;
+        }
+        .delivr-logo-svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -45,6 +72,17 @@
     <!-- CHAUFFEUR INLOG SCHERM -->
     <div id="chauffeurLoginScherm" class="login-container">
         <div class="login-box">
+            <!-- Logo bovenaan het inlogscherm -->
+            <div class="delivr-logo-container">
+                <svg class="delivr-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460">
+                    <path fill="#1B315E" d="M 287,20 L 318,39 L 112,163 L 112,330 L 236,402 L 359,330 L 359,181 L 332,165 L 198,243 L 236,265 L 236,384 L 127,321 L 127,180 L 302,74 L 331,93 L 159,197 L 159,224 L 332,124 L 391,158 L 391,348 L 236,438 L 80,348 L 80,145 Z" />
+                    <path fill="#E31E24" fill-rule="evenodd" d="M 250,262 L 302,232 C 328,217 346,228 346,260 L 346,315 C 346,338 332,354 306,369 L 250,388 Z M 274,279 L 274,344 L 304,327 C 315,321 320,312 320,299 L 320,273 C 320,260 314,257 303,263 Z" />
+                    <text x="428" y="210" fill="#E31E24" font-family="'Montserrat', 'Arial Black', sans-serif" font-size="132" font-weight="900" letter-spacing="1">DELIVR</text>
+                    <text x="428" y="332" fill="#00427A" font-family="'Montserrat', 'Arial Black', sans-serif" font-size="118" font-weight="900" letter-spacing="0.5">EXPRESS</text>
+                    <text x="430" y="396" fill="#1B315E" font-family="'Montserrat', 'Arial Black', sans-serif" font-size="46" font-weight="800" letter-spacing="1.5">AMSTERDAM</text>
+                </svg>
+            </div>
+
             <h2 style="margin-top: 0;" data-i18n="login_title">DEA Chauffeurs</h2>
             <p data-i18n="login_desc">Voer je persoonlijke code in om uren te registreren.</p>
             <input type="password" id="toegangscode" placeholder="Toegangscode" data-i18n-placeholder="login_placeholder" style="text-align: center; font-size: 18px;">
@@ -56,6 +94,17 @@
     <!-- DE REST VAN DE APP -->
     <div id="appScherm">
         <div class="container">
+            <!-- Logo bovenaan het urenformulier -->
+            <div class="delivr-logo-container">
+                <svg class="delivr-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460">
+                    <path fill="#1B315E" d="M 287,20 L 318,39 L 112,163 L 112,330 L 236,402 L 359,330 L 359,181 L 332,165 L 198,243 L 236,265 L 236,384 L 127,321 L 127,180 L 302,74 L 331,93 L 159,197 L 159,224 L 332,124 L 391,158 L 391,348 L 236,438 L 80,348 L 80,145 Z" />
+                    <path fill="#E31E24" fill-rule="evenodd" d="M 250,262 L 302,232 C 328,217 346,228 346,260 L 346,315 C 346,338 332,354 306,369 L 250,388 Z M 274,279 L 274,344 L 304,327 C 315,321 320,312 320,299 L 320,273 C 320,260 314,257 303,263 Z" />
+                    <text x="428" y="210" fill="#E31E24" font-family="'Montserrat', 'Arial Black', sans-serif" font-size="132" font-weight="900" letter-spacing="1">DELIVR</text>
+                    <text x="428" y="332" fill="#00427A" font-family="'Montserrat', 'Arial Black', sans-serif" font-size="118" font-weight="900" letter-spacing="0.5">EXPRESS</text>
+                    <text x="430" y="396" fill="#1B315E" font-family="'Montserrat', 'Arial Black', sans-serif" font-size="46" font-weight="800" letter-spacing="1.5">AMSTERDAM</text>
+                </svg>
+            </div>
+
             <h2 data-i18n="app_title">Urenregistratie</h2>
             <form id="urenForm">
                 <label data-i18n="lbl_date">Datum</label>
@@ -90,6 +139,49 @@
     </div>
 
     <script>
+        // --- GENEREER AUTOMATISCH HOME SCREEN ICOON (iOS & ANDROID) ---
+        (function genereerHomeScreenIcon() {
+            const svgAppIcon = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+                <rect width="512" height="512" fill="#ffffff" rx="90"/>
+                <g transform="translate(20, 22)">
+                    <path fill="#1B315E" d="M 287,20 L 318,39 L 112,163 L 112,330 L 236,402 L 359,330 L 359,181 L 332,165 L 198,243 L 236,265 L 236,384 L 127,321 L 127,180 L 302,74 L 331,93 L 159,197 L 159,224 L 332,124 L 391,158 L 391,348 L 236,438 L 80,348 L 80,145 Z" />
+                    <path fill="#E31E24" fill-rule="evenodd" d="M 250,262 L 302,232 C 328,217 346,228 346,260 L 346,315 C 346,338 332,354 306,369 L 250,388 Z M 274,279 L 274,344 L 304,327 C 315,321 320,312 320,299 L 320,273 C 320,260 314,257 303,263 Z" />
+                </g>
+            </svg>`;
+
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 512, 512);
+                const pngDataUrl = canvas.toDataURL('image/png');
+
+                // Stel in voor iPhone / iPad (Zet op beginscherm) en browser-tabblad
+                document.getElementById('appTouchIcon').href = pngDataUrl;
+                document.getElementById('appFavicon').href = pngDataUrl;
+
+                // Stel dynamisch Web App Manifest in voor Android
+                const manifest = {
+                    name: "Delivr Express Amsterdam",
+                    short_name: "Delivr Express",
+                    start_url: window.location.href,
+                    display: "standalone",
+                    background_color: "#ffffff",
+                    theme_color: "#1B315E",
+                    icons: [
+                        { src: pngDataUrl, sizes: "192x192", type: "image/png" },
+                        { src: pngDataUrl, sizes: "512x512", type: "image/png" }
+                    ]
+                };
+                const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+                document.getElementById('appManifest').href = URL.createObjectURL(manifestBlob);
+            };
+            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgAppIcon.trim())));
+        })();
+
         // Database connectie
         const SUPABASE_URL = 'https://lmclewyqceztcsvqkoaf.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_gv68Kwlf5w0P8bry7hMBaw_SrE_sAjS';
