@@ -149,7 +149,7 @@
                 </div>
                 <table>
                     <thead>
-                        <tr><th>Naam</th><th>Uurloon</th><th style="width: 130px;">Acties</th></tr>
+                        <tr><th>Naam</th><th>Uurloon</th><th>Pincode</th><th style="width: 130px;">Acties</th></tr>
                     </thead>
                     <tbody id="lijstChauffeurs"></tbody>
                 </table>
@@ -193,7 +193,7 @@
     </div>
 </div>
 
-<!-- MODAL: CHAUFFEUR BEHEREN -->
+<!-- MODAL: CHAUFFEUR BEHEREN (NU MET PINCODE VELD) -->
 <div id="chauffeurModal" class="modal">
     <div class="modal-content">
         <h2 id="chauffeurModalTitel" style="margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">Chauffeur Toevoegen</h2>
@@ -202,6 +202,8 @@
             <input type="text" id="chNaam" required placeholder="Bijv: Fadi">
             <label>Uurloon (€)</label>
             <input type="number" step="0.01" id="chLoon" required placeholder="Bijv: 15.50">
+            <label>Pincode / Inlogcode (Voor app)</label>
+            <input type="text" id="chPincode" required placeholder="Bijv: 1234 of FADI01">
             <div class="modal-knoppen">
                 <button type="button" class="btn-grijs" onclick="sluitChauffeurModal()">Annuleren</button>
                 <button type="submit" class="btn-blauw">Opslaan</button>
@@ -291,7 +293,8 @@
         lijstCh.innerHTML = '';
         alleChauffeurs.forEach(c => {
             const loonTekst = c.uurloon ? `€ ${parseFloat(c.uurloon).toFixed(2)}` : '€ 0.00';
-            lijstCh.innerHTML += `<tr><td><strong>${c.naam}</strong></td><td>${loonTekst}</td>
+            const pincodeTekst = c.pincode ? c.pincode : '-';
+            lijstCh.innerHTML += `<tr><td><strong>${c.naam}</strong></td><td>${loonTekst}</td><td>${pincodeTekst}</td>
                 <td><div class="actie-knoppen"><button class="edit-btn" onclick="openChauffeurModal(${c.id})">✎</button><button class="delete-btn" onclick="verwijderChauffeur(${c.id})">✖</button></div></td></tr>`;
         });
 
@@ -307,18 +310,26 @@
         actieveChauffeurId = id;
         if (id) {
             const ch = alleChauffeurs.find(c => c.id === id);
-            document.getElementById('chNaam').value = ch.naam; document.getElementById('chLoon').value = ch.uurloon || '';
+            document.getElementById('chNaam').value = ch.naam; 
+            document.getElementById('chLoon').value = ch.uurloon || '';
+            document.getElementById('chPincode').value = ch.pincode || '';
             document.getElementById('chauffeurModalTitel').innerText = "Chauffeur Bewerken";
         } else {
-            document.getElementById('chauffeurForm').reset(); document.getElementById('chauffeurModalTitel').innerText = "Nieuwe Chauffeur";
+            document.getElementById('chauffeurForm').reset(); 
+            document.getElementById('chauffeurModalTitel').innerText = "Nieuwe Chauffeur";
         }
         document.getElementById('chauffeurModal').style.display = 'flex';
     }
+    
     function sluitChauffeurModal() { document.getElementById('chauffeurModal').style.display = 'none'; actieveChauffeurId = null; }
 
     document.getElementById('chauffeurForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const opslagData = { naam: document.getElementById('chNaam').value, uurloon: parseFloat(document.getElementById('chLoon').value) };
+        const opslagData = { 
+            naam: document.getElementById('chNaam').value, 
+            uurloon: parseFloat(document.getElementById('chLoon').value),
+            pincode: document.getElementById('chPincode').value
+        };
         let resultaat = actieveChauffeurId ? await db.from('chauffeurs').update(opslagData).eq('id', actieveChauffeurId) : await db.from('chauffeurs').insert(opslagData);
         if (resultaat.error) alert("Fout: " + resultaat.error.message); else { sluitChauffeurModal(); laadDashboard(); }
     });
@@ -494,13 +505,13 @@
         }
 
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('landscape'); // Liggend gemaakt vanwege de vele kolommen
+        const doc = new jsPDF('landscape'); 
 
         const datumVandaag = new Date().toLocaleDateString('nl-NL');
         const factuurNummer = "F" + new Date().getFullYear() + String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 
         doc.setFontSize(22);
-        doc.setTextColor(111, 66, 193); // Paarse tekst voor de titel
+        doc.setTextColor(111, 66, 193); 
         doc.text("FACTUUR", 14, 25);
         
         doc.setFontSize(12);
@@ -524,7 +535,6 @@
 
         const getChauffeurNaam = (id) => alleChauffeurs.find(c => c.id == id)?.naam || 'Onbekend';
         
-        // Exact de kolommen in de door jou gevraagde volgorde
         const tableColumn = ["Datum", "Chauffeur", "Ritnummer", "Pauze", "Start", "Eind", "Totaal Uren", "Belastbaar", "Uurtarief", "Bedrag"];
         const tableRows = [];
         
@@ -539,13 +549,11 @@
             somOmzet += omzetNum;
             somBelastbaar += nettoUren;
 
-            // Bereken het uurtarief (omzet gedeeld door netto uren)
             let uurtarief = 0;
             if (nettoUren > 0) {
                 uurtarief = omzetNum / nettoUren;
             }
 
-            // Bereken Bruto Totaal Uren (Belastbare uren + Pauzetijd in uren)
             const pauzeUren = (rit.pauze_minuten ? parseInt(rit.pauze_minuten) : 0) / 60;
             const totaalUren = nettoUren + pauzeUren;
 
@@ -563,7 +571,6 @@
             ]);
         });
 
-        // Voeg de totaal-rij toe
         tableRows.push([
             "TOTAAL TE FACTUREREN", "", "", "", "", "", "", 
             somBelastbaar.toFixed(2) + " u", "",
@@ -575,11 +582,11 @@
             body: tableRows,
             startY: 65,
             theme: 'grid',
-            headStyles: { fillColor: [111, 66, 193] }, // Mooie paarse kleur, matcht met de knop
+            headStyles: { fillColor: [111, 66, 193] }, 
             didParseCell: function(data) {
                 if (data.row.index === tableRows.length - 1) {
                     data.cell.styles.fontStyle = 'bold';
-                    data.cell.styles.fillColor = [243, 232, 255]; // Licht paars voor de totaalrij
+                    data.cell.styles.fillColor = [243, 232, 255]; 
                 }
             }
         });
