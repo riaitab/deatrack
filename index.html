@@ -46,14 +46,14 @@
     <div id="chauffeurLoginScherm" class="login-container">
         <div class="login-box">
             <h2 style="margin-top: 0;" data-i18n="login_title">DEA Chauffeurs</h2>
-            <p data-i18n="login_desc">Voer de toegangscode in om uren te registreren.</p>
+            <p data-i18n="login_desc">Voer je persoonlijke code in om uren te registreren.</p>
             <input type="password" id="toegangscode" placeholder="Toegangscode" data-i18n-placeholder="login_placeholder" style="text-align: center; font-size: 18px;">
             <button onclick="checkChauffeurCode()" class="btn-blauw" data-i18n="login_btn">Inloggen</button>
             <p id="foutmeldingCode" style="color: red; display: none; margin-top: 15px; font-weight: bold;" data-i18n="login_error">Onjuiste code, probeer het opnieuw.</p>
         </div>
     </div>
 
-    <!-- DE REST VAN DE APP (Wordt pas getoond na inloggen) -->
+    <!-- DE REST VAN DE APP -->
     <div id="appScherm">
         <div class="container">
             <h2 data-i18n="app_title">Urenregistratie</h2>
@@ -97,12 +97,12 @@
 
         let chauffeursData = [];
 
-        // --- VERTALINGEN (WOORDENBOEK) ---
+        // --- VERTALINGEN ---
         const vertalingen = {
             nl: {
                 login_title: "DEA Chauffeurs",
-                login_desc: "Voer de toegangscode in om uren te registreren.",
-                login_placeholder: "Toegangscode",
+                login_desc: "Voer je persoonlijke code in om uren te registreren.",
+                login_placeholder: "Persoonlijke code",
                 login_btn: "Inloggen",
                 login_error: "Onjuiste code, probeer het opnieuw.",
                 app_title: "Urenregistratie",
@@ -123,8 +123,8 @@
             },
             en: {
                 login_title: "DEA Drivers",
-                login_desc: "Enter the access code to register your hours.",
-                login_placeholder: "Access code",
+                login_desc: "Enter your personal access code to register hours.",
+                login_placeholder: "Personal code",
                 login_btn: "Login",
                 login_error: "Incorrect code, please try again.",
                 app_title: "Hours Registration",
@@ -145,8 +145,8 @@
             },
             es: {
                 login_title: "Conductores DEA",
-                login_desc: "Introduzca el código de acceso para registrar sus horas.",
-                login_placeholder: "Código de acceso",
+                login_desc: "Introduce tu código personal para registrar tus horas.",
+                login_placeholder: "Código personal",
                 login_btn: "Iniciar sesión",
                 login_error: "Código incorrecto, inténtalo de nuevo.",
                 app_title: "Registro de Horas",
@@ -167,25 +167,17 @@
             }
         };
 
-        // Functie om de taal aan te passen
         function veranderTaal(taal) {
-            // Sla de gekozen taal op in het geheugen van de browser
             localStorage.setItem('voorkeursTaal', taal);
-            
-            // Vervang alle gewone teksten
             document.querySelectorAll('[data-i18n]').forEach(element => {
                 const sleutel = element.getAttribute('data-i18n');
                 element.innerText = vertalingen[taal][sleutel];
             });
-
-            // Vervang alle placeholders (grijze tekst in invoervelden)
             document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
                 const sleutel = element.getAttribute('data-i18n-placeholder');
                 element.placeholder = vertalingen[taal][sleutel];
             });
-
-            // Pas de lege opties in de dropdowns aan, als deze al geladen zijn
-            if (document.getElementById('chauffeur_id').options.length > 0) {
+            if (document.getElementById('chauffeur_id').options.length > 0 && !document.getElementById('chauffeur_id').disabled) {
                 document.getElementById('chauffeur_id').options[0].text = vertalingen[taal]['opt_driver_kies'];
             }
             if (document.getElementById('vrachtwagen_id').options.length > 0) {
@@ -193,32 +185,51 @@
             }
         }
 
-        // Controleer bij het laden of er al een taal is opgeslagen
         window.onload = function() {
             let opgeslagenTaal = localStorage.getItem('voorkeursTaal') || 'nl';
             document.getElementById('langSelect').value = opgeslagenTaal;
             veranderTaal(opgeslagenTaal);
         };
 
-
-        // --- INLOG LOGICA ---
-        function checkChauffeurCode() {
+        // --- NIEUWE INLOG LOGICA MET DATABASE CHECK ---
+        async function checkChauffeurCode() {
             const ingevoerdeCode = document.getElementById('toegangscode').value;
-            const juisteCode = "DEA2026"; 
+            if (!ingevoerdeCode) return;
 
-            if (ingevoerdeCode === juisteCode) {
-                document.getElementById('chauffeurLoginScherm').style.display = 'none';
-                document.getElementById('appScherm').style.display = 'block';
-                laadStamgegevens();
-            } else {
-                document.getElementById('foutmeldingCode').style.display = 'block';
+            document.getElementById('foutmeldingCode').style.display = 'none';
+
+            // Haal de chauffeurslijst op uit de database
+            const { data: chauffeurs, error } = await db.from('chauffeurs').select('*');
+
+            if (chauffeurs) {
+                // Zoek of de ingevoerde pincode overeenkomt met een chauffeur
+                const ingelogdeChauffeur = chauffeurs.find(c => c.pincode == ingevoerdeCode);
+
+                if (ingelogdeChauffeur) {
+                    // Code klopt! Verberg inlog en toon formulier
+                    document.getElementById('chauffeurLoginScherm').style.display = 'none';
+                    document.getElementById('appScherm').style.display = 'block';
+                    
+                    // Laad de data in de velden
+                    await laadStamgegevens();
+
+                    // Selecteer de ingelogde chauffeur automatisch
+                    const chSelect = document.getElementById('chauffeur_id');
+                    chSelect.value = ingelogdeChauffeur.id;
+                    
+                    // Blokkeer het veld zodat de chauffeur geen andere naam kan kiezen
+                    chSelect.disabled = true;
+                    chSelect.style.backgroundColor = "#e9ecef"; // Maak het visueel grijs/geblokkeerd
+
+                } else {
+                    // Verkeerde code
+                    document.getElementById('foutmeldingCode').style.display = 'block';
+                }
             }
         }
 
         document.getElementById('toegangscode').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                checkChauffeurCode();
-            }
+            if (e.key === 'Enter') checkChauffeurCode();
         });
 
 
@@ -292,6 +303,9 @@
                 alert("Fout bij opslaan: " + error.message);
             } else {
                 document.getElementById('urenForm').reset();
+                
+                // Zorg dat de naam behouden blijft na het wissen van het formulier
+                document.getElementById('chauffeur_id').value = chauffeur_id; 
                 document.getElementById('datum').value = new Date().toISOString().split('T')[0];
                 
                 document.getElementById('succesMelding').style.display = 'block';
