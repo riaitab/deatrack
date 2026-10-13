@@ -9,9 +9,11 @@
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 0; }
         
-        /* Taalwisselaar styling */
-        .language-selector { position: absolute; top: 15px; right: 15px; }
-        .language-selector select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background-color: white; cursor: pointer; width: auto; margin: 0; }
+        /* Taalwisselaar Vlaggen-knoppen */
+        .language-selector { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 100; }
+        .flag-btn { font-size: 22px; background-color: white; border: 2px solid #ccc; border-radius: 8px; padding: 5px 10px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; }
+        .flag-btn:hover { background-color: #f0f0f0; }
+        .flag-btn.actief { border-color: #0056b3; background-color: #e6f0fa; } /* Blauwe markering voor actieve taal */
 
         /* Container voor het formulier */
         .container { max-width: 500px; margin: 30px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); position: relative; }
@@ -28,18 +30,16 @@
         .login-box { background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; max-width: 350px; width: 100%; position: relative;}
         
         /* Verberg de app totdat er is ingelogd */
-        #appScherm { display: none; }
+        #appScherm { display: none; padding-top: 50px; /* Ruimte voor de vlaggen */ }
     </style>
 </head>
 <body>
 
-    <!-- TAAL KEUZE MENU -->
+    <!-- TAAL KEUZE MENU MET VLAGGEN -->
     <div class="language-selector">
-        <select id="langSelect" onchange="veranderTaal(this.value)">
-            <option value="nl">🇳🇱 Nederlands</option>
-            <option value="en">🇬🇧 English</option>
-            <option value="es">🇪🇸 Español</option>
-        </select>
+        <button id="btn-nl" class="flag-btn actief" onclick="veranderTaal('nl')">🇳🇱</button>
+        <button id="btn-en" class="flag-btn" onclick="veranderTaal('en')">🇬🇧</button>
+        <button id="btn-es" class="flag-btn" onclick="veranderTaal('es')">🇪🇸</button>
     </div>
 
     <!-- CHAUFFEUR INLOG SCHERM -->
@@ -168,15 +168,28 @@
         };
 
         function veranderTaal(taal) {
+            // Sla de voorkeurstaal op
             localStorage.setItem('voorkeursTaal', taal);
+            
+            // Markeer de gekozen vlag als actief
+            document.getElementById('btn-nl').classList.remove('actief');
+            document.getElementById('btn-en').classList.remove('actief');
+            document.getElementById('btn-es').classList.remove('actief');
+            document.getElementById('btn-' + taal).classList.add('actief');
+
+            // Teksten vertalen
             document.querySelectorAll('[data-i18n]').forEach(element => {
                 const sleutel = element.getAttribute('data-i18n');
                 element.innerText = vertalingen[taal][sleutel];
             });
+            
+            // Placeholders vertalen
             document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
                 const sleutel = element.getAttribute('data-i18n-placeholder');
                 element.placeholder = vertalingen[taal][sleutel];
             });
+            
+            // Dropdown opties vertalen (als ze al geladen zijn)
             if (document.getElementById('chauffeur_id').options.length > 0 && !document.getElementById('chauffeur_id').disabled) {
                 document.getElementById('chauffeur_id').options[0].text = vertalingen[taal]['opt_driver_kies'];
             }
@@ -185,44 +198,36 @@
             }
         }
 
+        // Taal laden bij het opstarten
         window.onload = function() {
             let opgeslagenTaal = localStorage.getItem('voorkeursTaal') || 'nl';
-            document.getElementById('langSelect').value = opgeslagenTaal;
             veranderTaal(opgeslagenTaal);
         };
 
-        // --- NIEUWE INLOG LOGICA MET DATABASE CHECK ---
+        // --- INLOG LOGICA MET DATABASE CHECK ---
         async function checkChauffeurCode() {
             const ingevoerdeCode = document.getElementById('toegangscode').value;
             if (!ingevoerdeCode) return;
 
             document.getElementById('foutmeldingCode').style.display = 'none';
 
-            // Haal de chauffeurslijst op uit de database
             const { data: chauffeurs, error } = await db.from('chauffeurs').select('*');
 
             if (chauffeurs) {
-                // Zoek of de ingevoerde pincode overeenkomt met een chauffeur
                 const ingelogdeChauffeur = chauffeurs.find(c => c.pincode == ingevoerdeCode);
 
                 if (ingelogdeChauffeur) {
-                    // Code klopt! Verberg inlog en toon formulier
                     document.getElementById('chauffeurLoginScherm').style.display = 'none';
                     document.getElementById('appScherm').style.display = 'block';
                     
-                    // Laad de data in de velden
                     await laadStamgegevens();
 
-                    // Selecteer de ingelogde chauffeur automatisch
                     const chSelect = document.getElementById('chauffeur_id');
                     chSelect.value = ingelogdeChauffeur.id;
-                    
-                    // Blokkeer het veld zodat de chauffeur geen andere naam kan kiezen
                     chSelect.disabled = true;
-                    chSelect.style.backgroundColor = "#e9ecef"; // Maak het visueel grijs/geblokkeerd
+                    chSelect.style.backgroundColor = "#e9ecef"; 
 
                 } else {
-                    // Verkeerde code
                     document.getElementById('foutmeldingCode').style.display = 'block';
                 }
             }
@@ -232,14 +237,12 @@
             if (e.key === 'Enter') checkChauffeurCode();
         });
 
-
         // --- APP LOGICA ---
         document.getElementById('datum').value = new Date().toISOString().split('T')[0];
 
         async function laadStamgegevens() {
-            const huidigeTaal = document.getElementById('langSelect').value;
+            const huidigeTaal = localStorage.getItem('voorkeursTaal') || 'nl';
 
-            // Chauffeurs laden
             const { data: chauffeurs } = await db.from('chauffeurs').select('*').order('naam');
             const chSelect = document.getElementById('chauffeur_id');
             chSelect.innerHTML = `<option value="">${vertalingen[huidigeTaal]['opt_driver_kies']}</option>`;
@@ -250,7 +253,6 @@
                 });
             }
 
-            // Vrachtwagens laden
             const { data: vrachtwagens } = await db.from('vrachtwagens').select('*').order('kenteken');
             const vrSelect = document.getElementById('vrachtwagen_id');
             vrSelect.innerHTML = `<option value="">${vertalingen[huidigeTaal]['opt_truck_kies']}</option>`;
@@ -304,7 +306,6 @@
             } else {
                 document.getElementById('urenForm').reset();
                 
-                // Zorg dat de naam behouden blijft na het wissen van het formulier
                 document.getElementById('chauffeur_id').value = chauffeur_id; 
                 document.getElementById('datum').value = new Date().toISOString().split('T')[0];
                 
