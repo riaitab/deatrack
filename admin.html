@@ -193,7 +193,7 @@
     </div>
 </div>
 
-<!-- MODAL: CHAUFFEUR BEHEREN (NU MET PINCODE VELD) -->
+<!-- MODAL: CHAUFFEUR BEHEREN (MET PINCODE VELD) -->
 <div id="chauffeurModal" class="modal">
     <div class="modal-content">
         <h2 id="chauffeurModalTitel" style="margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">Chauffeur Toevoegen</h2>
@@ -497,7 +497,7 @@
         doc.save(`Intern_Overzicht_week_${weekTekst}_${chauffeurNaam.replace(/\s+/g, '_')}.pdf`);
     }
 
-    // NIEUWE KLANTFACTUUR (Landscape, met gedetailleerde urenopbouw en paarse kop)
+    // NIEUWE KLANTFACTUUR (Portret, gebaseerd op het Delivr Express voorbeeld)
     function genereerKlantFactuur() {
         if (laatstGefilterdeRitten.length === 0) {
             alert("Er zijn geen ritten geselecteerd om een factuur van te maken.");
@@ -505,97 +505,155 @@
         }
 
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('landscape'); 
+        const doc = new jsPDF('p', 'mm', 'a4'); 
 
-        const datumVandaag = new Date().toLocaleDateString('nl-NL');
-        const factuurNummer = "F" + new Date().getFullYear() + String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+        const bedrijfsGegevens = [
+            ["Firma Naam:", "D.E.A. Delivery Express Amsterdam B.V."],
+            ["Adres:", "Poortland 148"],
+            ["Postcode/plaats:", "1046 BD Amsterdam"],
+            ["Kvknr.:", "76651320"],
+            ["niwonr.:", "374670000"],
+            ["email.:", "deliveryexpressamsterdam@gmail.com"],
+            ["Rekeningnummer:", "NL26INGB0009321543"],
+            ["BIC code:", "INGBNL2A"],
+            ["Btw nummer:", "NL860724992801"]
+        ];
 
-        doc.setFontSize(22);
-        doc.setTextColor(111, 66, 193); 
-        doc.text("FACTUUR", 14, 25);
-        
-        doc.setFontSize(12);
-        doc.setTextColor(0, 0, 0);
-        doc.text("Delivery Express Amsterdam", 14, 35);
-        
+        // 1. LOGO TEKENEN 
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(28);
+        doc.setTextColor(220, 38, 38); 
+        doc.text("DELIVR", 15, 25);
+        doc.setTextColor(15, 37, 87); 
+        doc.text("EXPRESS", 15, 36);
+        doc.setFontSize(14);
+        doc.text("AMSTERDAM", 15, 43);
+
+        // 2. KLANTGEGEVENS 
+        doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
-        doc.setTextColor(80, 80, 80);
-        doc.text(`Factuurdatum: ${datumVandaag}`, 220, 25);
-        doc.text(`Factuurnummer: ${factuurNummer}`, 220, 31);
-        
-        const datums = laatstGefilterdeRitten.map(r => new Date(r.datum));
-        const minDatum = new Date(Math.min(...datums));
-        const maxDatum = new Date(Math.max(...datums));
-        const formatDatum = (d) => `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
-        
-        doc.setFontSize(11);
         doc.setTextColor(0, 0, 0);
-        doc.text("Geleverde diensten voor periode:", 14, 50);
-        doc.text(`${formatDatum(minDatum)} t/m ${formatDatum(maxDatum)}`, 14, 56);
+        doc.text("Aan: Altena express", 15, 60);
+        doc.text("Tav David sargsjan", 15, 65);
+        doc.text("Atoomweg 54", 15, 70);
+        doc.text("3542 AB Utrecht", 15, 75);
 
-        const getChauffeurNaam = (id) => alleChauffeurs.find(c => c.id == id)?.naam || 'Onbekend';
+        // 3. FACTUUR GEGEVENS 
+        const datumVandaag = new Date().toLocaleDateString('nl-NL');
+        const factuurNummer = new Date().getFullYear() + "-" + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
         
-        const tableColumn = ["Datum", "Chauffeur", "Ritnummer", "Pauze", "Start", "Eind", "Totaal Uren", "Belastbaar", "Uurtarief", "Bedrag"];
-        const tableRows = [];
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("Factuur", 80, 60);
         
-        let somOmzet = 0;
-        let somBelastbaar = 0;
-        const gesorteerdeRitten = [...laatstGefilterdeRitten].sort((a, b) => new Date(a.datum) - new Date(b.datum));
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text("Klant nr.:", 80, 67); doc.text("| 15", 105, 67);
+        doc.text("Factuurnummer:", 80, 72); doc.text(`| ${factuurNummer}`, 105, 72);
+        doc.text("Factuurdatum:", 80, 77); doc.text(`| ${datumVandaag}`, 105, 77);
+        
+        let weken = [...new Set(laatstGefilterdeRitten.map(r => r.weeknummer).filter(Boolean))].sort((a,b)=>a-b);
+        const periodeTekst = weken.length > 1 ? `Week ${weken[0]} t/m ${weken[weken.length-1]}` : `Week ${weken[0] || '-'}`;
+        doc.text("Periode", 80, 82); doc.text(`| ${periodeTekst}`, 105, 82);
 
-        gesorteerdeRitten.forEach(rit => {
-            const nettoUren = rit.netto_gewerkte_uren ? parseFloat(rit.netto_gewerkte_uren) : 0;
-            const omzetNum = rit.totaal_facturatie_bedrag ? parseFloat(rit.totaal_facturatie_bedrag) : 0;
-            
-            somOmzet += omzetNum;
-            somBelastbaar += nettoUren;
-
-            let uurtarief = 0;
-            if (nettoUren > 0) {
-                uurtarief = omzetNum / nettoUren;
-            }
-
-            const pauzeUren = (rit.pauze_minuten ? parseInt(rit.pauze_minuten) : 0) / 60;
-            const totaalUren = nettoUren + pauzeUren;
-
-            tableRows.push([
-                formatDatum(new Date(rit.datum)),
-                getChauffeurNaam(rit.chauffeur_id),
-                rit.rit_omschrijving || '-',
-                (rit.pauze_minuten || 0) + " min",
-                rit.starttijd || '-',
-                rit.eindtijd || '-',
-                totaalUren.toFixed(2) + " u",
-                nettoUren.toFixed(2) + " u",
-                `€ ${uurtarief.toFixed(2)}`,
-                `€ ${omzetNum.toFixed(2)}`
-            ]);
+        // 4. BEDRIJFSGEGEVENS D.E.A. 
+        let startYRechts = 60;
+        bedrijfsGegevens.forEach(regel => {
+            doc.setFont("helvetica", "bold");
+            doc.text(regel[0], 135, startYRechts);
+            doc.setFont("helvetica", "normal");
+            doc.text(`| ${regel[1]}`, 165, startYRechts);
+            startYRechts += 5;
         });
 
-        tableRows.push([
-            "TOTAAL TE FACTUREREN", "", "", "", "", "", "", 
-            somBelastbaar.toFixed(2) + " u", "",
-            `€ ${somOmzet.toFixed(2)}`
-        ]);
+        // 5. INTRO TEKST
+        doc.setFont("helvetica", "normal");
+        doc.text("Hierbij belasten wij u voor de verrichte transportdiensten:", 15, 115);
+        doc.setFont("helvetica", "bold");
+        doc.text("DHL Houten 212", 15, 120);
+        const chNaam = alleChauffeurs.find(c => c.id == laatstGefilterdeRitten[0].chauffeur_id)?.naam || '';
+        doc.text(chNaam, 15, 125);
+
+        // 6. DATA VERWERKEN 
+        const urenPerWeek = {};
+        let totaalUren = 0;
+        let totaalOmzet = 0;
+        let uurtarief = 54; 
+
+        laatstGefilterdeRitten.forEach(rit => {
+            const wk = rit.weeknummer || '?';
+            if (!urenPerWeek[wk]) urenPerWeek[wk] = { dagen: 0, uren: 0, bedrag: 0 };
+            
+            urenPerWeek[wk].dagen += 1;
+            const netto = parseFloat(rit.netto_gewerkte_uren || 0);
+            const bedrag = parseFloat(rit.totaal_facturatie_bedrag || 0);
+            
+            urenPerWeek[wk].uren += netto;
+            urenPerWeek[wk].bedrag += bedrag;
+            totaalUren += netto;
+            totaalOmzet += bedrag;
+            
+            if (netto > 0) uurtarief = bedrag / netto; 
+        });
+
+        // 7. TABEL GENEREREN
+        const tableColumn = ["Periode", "Dagen", "Uren", `Eenheid\n${uurtarief.toFixed(0)} €`, "Bedrag"];
+        const tableRows = [];
+
+        Object.keys(urenPerWeek).sort((a,b)=>a-b).forEach(wk => {
+            tableRows.push([
+                `Week ${wk}`,
+                `${urenPerWeek[wk].dagen}x`,
+                urenPerWeek[wk].uren.toFixed(2).replace('.', ','),
+                `X ${uurtarief.toFixed(0)}`,
+                `€ ${urenPerWeek[wk].bedrag.toFixed(2).replace('.', ',')}`
+            ]);
+        });
 
         doc.autoTable({
             head: [tableColumn],
             body: tableRows,
-            startY: 65,
-            theme: 'grid',
-            headStyles: { fillColor: [111, 66, 193] }, 
-            didParseCell: function(data) {
-                if (data.row.index === tableRows.length - 1) {
-                    data.cell.styles.fontStyle = 'bold';
-                    data.cell.styles.fillColor = [243, 232, 255]; 
-                }
-            }
+            startY: 135,
+            theme: 'plain',
+            headStyles: { fillColor: false, textColor: 0, fontStyle: 'bold', lineWidth: 0.1, lineColor: 200 },
+            bodyStyles: { textColor: 0 },
+            alternateRowStyles: { fillColor: [249, 249, 249] }
         });
 
-        const finalY = doc.lastAutoTable.finalY || 150;
-        doc.setFontSize(10);
-        doc.text("Wij verzoeken u vriendelijk het bovenstaande bedrag binnen 14 dagen over te maken.", 14, finalY + 15);
+        const finalY = doc.lastAutoTable.finalY;
 
-        doc.save(`Klantfactuur_DEA_${factuurNummer}.pdf`);
+        // 8. TOTALEN & BTW ONDERAAN
+        const btwBedrag = totaalOmzet * 0.21;
+        const totaalIncl = totaalOmzet + btwBedrag;
+
+        doc.setFont("helvetica", "bold");
+        doc.text("Totaal", 15, finalY + 10);
+        doc.text("Totaal Uren", 60, finalY + 10);
+        doc.text(totaalUren.toFixed(2).replace('.', ','), 60, finalY + 15);
+
+        doc.text("Totaal", 140, finalY + 10);
+        doc.text(`€ ${totaalOmzet.toFixed(2).replace('.', ',')}`, 170, finalY + 10);
+        
+        doc.setFont("helvetica", "normal");
+        doc.text("21% btw", 140, finalY + 16);
+        doc.text(`${btwBedrag.toFixed(2).replace('.', ',')}`, 170, finalY + 16);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text("Bedrag incl. BTW", 140, finalY + 24);
+        doc.text(`€ ${totaalIncl.toFixed(2).replace('.', ',')}`, 170, finalY + 24);
+
+        doc.setLineWidth(0.5);
+        doc.line(140, finalY + 19, 195, finalY + 19);
+        doc.line(140, finalY + 26, 195, finalY + 26);
+
+        // 9. VOORWAARDEN
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text("Betalingsconditie: 14 dagen netto", 15, finalY + 35);
+        doc.text("Bij uw betaling factuurnummer vermelden", 15, finalY + 40);
+
+        doc.save(`Factuur_${factuurNummer}.pdf`);
     }
 
     function openBewerkScherm(id) {
