@@ -9,8 +9,12 @@
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 0; }
         
+        /* Taalwisselaar styling */
+        .language-selector { position: absolute; top: 15px; right: 15px; }
+        .language-selector select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; background-color: white; cursor: pointer; width: auto; margin: 0; }
+
         /* Container voor het formulier */
-        .container { max-width: 500px; margin: 30px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .container { max-width: 500px; margin: 30px auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); position: relative; }
         h2 { color: #0056b3; text-align: center; }
         label { font-weight: bold; margin-top: 15px; display: block; color: #333; }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
@@ -20,8 +24,8 @@
         .btn-blauw:hover { background-color: #004494; }
         
         /* Inlogscherm styling */
-        .login-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f4f4f9; }
-        .login-box { background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; max-width: 350px; width: 100%; }
+        .login-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f4f4f9; position: relative; }
+        .login-box { background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: center; max-width: 350px; width: 100%; position: relative;}
         
         /* Verberg de app totdat er is ingelogd */
         #appScherm { display: none; }
@@ -29,51 +33,59 @@
 </head>
 <body>
 
+    <!-- TAAL KEUZE MENU -->
+    <div class="language-selector">
+        <select id="langSelect" onchange="veranderTaal(this.value)">
+            <option value="nl">🇳🇱 Nederlands</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="es">🇪🇸 Español</option>
+        </select>
+    </div>
+
     <!-- CHAUFFEUR INLOG SCHERM -->
     <div id="chauffeurLoginScherm" class="login-container">
         <div class="login-box">
-            <h2 style="margin-top: 0;">DEA Chauffeurs</h2>
-            <p>Voer de toegangscode in om uren te registreren.</p>
-            <!-- Invoerveld wachtwoord -->
-            <input type="password" id="toegangscode" placeholder="Toegangscode" style="text-align: center; font-size: 18px;">
-            <button onclick="checkChauffeurCode()" class="btn-blauw">Inloggen</button>
-            <p id="foutmeldingCode" style="color: red; display: none; margin-top: 15px; font-weight: bold;">Onjuiste code, probeer het opnieuw.</p>
+            <h2 style="margin-top: 0;" data-i18n="login_title">DEA Chauffeurs</h2>
+            <p data-i18n="login_desc">Voer de toegangscode in om uren te registreren.</p>
+            <input type="password" id="toegangscode" placeholder="Toegangscode" data-i18n-placeholder="login_placeholder" style="text-align: center; font-size: 18px;">
+            <button onclick="checkChauffeurCode()" class="btn-blauw" data-i18n="login_btn">Inloggen</button>
+            <p id="foutmeldingCode" style="color: red; display: none; margin-top: 15px; font-weight: bold;" data-i18n="login_error">Onjuiste code, probeer het opnieuw.</p>
         </div>
     </div>
 
     <!-- DE REST VAN DE APP (Wordt pas getoond na inloggen) -->
     <div id="appScherm">
         <div class="container">
-            <h2>Urenregistratie</h2>
+            <h2 data-i18n="app_title">Urenregistratie</h2>
             <form id="urenForm">
-                <label>Datum</label>
+                <label data-i18n="lbl_date">Datum</label>
                 <input type="date" id="datum" required>
                 
-                <label>Ritnummer / Omschrijving</label>
-                <input type="text" id="rit_omschrijving" placeholder="Bijv: Rit 1 naar Utrecht of klantnaam" required>
+                <label data-i18n="lbl_desc">Ritnummer / Omschrijving</label>
+                <input type="text" id="rit_omschrijving" placeholder="Bijv: Rit 1 naar Utrecht of klantnaam" data-i18n-placeholder="ph_desc" required>
 
-                <label>Chauffeur</label>
+                <label data-i18n="lbl_driver">Chauffeur</label>
                 <select id="chauffeur_id" required>
-                    <option value="">Laden...</option>
+                    <option value="" data-i18n="opt_loading">Laden...</option>
                 </select>
 
-                <label>Vrachtwagen</label>
+                <label data-i18n="lbl_truck">Vrachtwagen</label>
                 <select id="vrachtwagen_id" required>
-                    <option value="">Laden...</option>
+                    <option value="" data-i18n="opt_loading">Laden...</option>
                 </select>
 
-                <label>Starttijd</label>
+                <label data-i18n="lbl_start">Starttijd</label>
                 <input type="time" id="starttijd" required>
 
-                <label>Eindtijd</label>
+                <label data-i18n="lbl_end">Eindtijd</label>
                 <input type="time" id="eindtijd" required>
 
-                <label>Pauze (in minuten)</label>
-                <input type="number" id="pauze_minuten" value="0" min="0" required placeholder="Aantal minuten">
+                <label data-i18n="lbl_pause">Pauze (in minuten)</label>
+                <input type="number" id="pauze_minuten" value="0" min="0" required placeholder="Aantal minuten" data-i18n-placeholder="ph_pause">
 
-                <button type="submit" class="btn-blauw">Versturen</button>
+                <button type="submit" class="btn-blauw" data-i18n="btn_submit">Versturen</button>
             </form>
-            <p id="succesMelding" style="color: green; text-align: center; display: none; font-weight: bold; margin-top: 15px;">Uren succesvol opgeslagen!</p>
+            <p id="succesMelding" style="color: green; text-align: center; display: none; font-weight: bold; margin-top: 15px;" data-i18n="msg_success">Uren succesvol opgeslagen!</p>
         </div>
     </div>
 
@@ -85,13 +97,116 @@
 
         let chauffeursData = [];
 
+        // --- VERTALINGEN (WOORDENBOEK) ---
+        const vertalingen = {
+            nl: {
+                login_title: "DEA Chauffeurs",
+                login_desc: "Voer de toegangscode in om uren te registreren.",
+                login_placeholder: "Toegangscode",
+                login_btn: "Inloggen",
+                login_error: "Onjuiste code, probeer het opnieuw.",
+                app_title: "Urenregistratie",
+                lbl_date: "Datum",
+                lbl_desc: "Ritnummer / Omschrijving",
+                ph_desc: "Bijv: Rit 1 naar Utrecht of klantnaam",
+                lbl_driver: "Chauffeur",
+                opt_loading: "Laden...",
+                opt_driver_kies: "Kies je naam...",
+                lbl_truck: "Vrachtwagen",
+                opt_truck_kies: "Kies vrachtwagen...",
+                lbl_start: "Starttijd",
+                lbl_end: "Eindtijd",
+                lbl_pause: "Pauze (in minuten)",
+                ph_pause: "Aantal minuten",
+                btn_submit: "Versturen",
+                msg_success: "Uren succesvol opgeslagen!"
+            },
+            en: {
+                login_title: "DEA Drivers",
+                login_desc: "Enter the access code to register your hours.",
+                login_placeholder: "Access code",
+                login_btn: "Login",
+                login_error: "Incorrect code, please try again.",
+                app_title: "Hours Registration",
+                lbl_date: "Date",
+                lbl_desc: "Route number / Description",
+                ph_desc: "E.g.: Route 1 to Utrecht or client name",
+                lbl_driver: "Driver",
+                opt_loading: "Loading...",
+                opt_driver_kies: "Choose your name...",
+                lbl_truck: "Truck",
+                opt_truck_kies: "Choose truck...",
+                lbl_start: "Start time",
+                lbl_end: "End time",
+                lbl_pause: "Break (in minutes)",
+                ph_pause: "Number of minutes",
+                btn_submit: "Submit",
+                msg_success: "Hours successfully saved!"
+            },
+            es: {
+                login_title: "Conductores DEA",
+                login_desc: "Introduzca el código de acceso para registrar sus horas.",
+                login_placeholder: "Código de acceso",
+                login_btn: "Iniciar sesión",
+                login_error: "Código incorrecto, inténtalo de nuevo.",
+                app_title: "Registro de Horas",
+                lbl_date: "Fecha",
+                lbl_desc: "Número de ruta / Descripción",
+                ph_desc: "Ej.: Ruta 1 a Utrecht o nombre del cliente",
+                lbl_driver: "Conductor",
+                opt_loading: "Cargando...",
+                opt_driver_kies: "Elige tu nombre...",
+                lbl_truck: "Camión",
+                opt_truck_kies: "Elige camión...",
+                lbl_start: "Hora de inicio",
+                lbl_end: "Hora de finalización",
+                lbl_pause: "Pausa (en minutos)",
+                ph_pause: "Número de minutos",
+                btn_submit: "Enviar",
+                msg_success: "¡Horas guardadas con éxito!"
+            }
+        };
+
+        // Functie om de taal aan te passen
+        function veranderTaal(taal) {
+            // Sla de gekozen taal op in het geheugen van de browser
+            localStorage.setItem('voorkeursTaal', taal);
+            
+            // Vervang alle gewone teksten
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const sleutel = element.getAttribute('data-i18n');
+                element.innerText = vertalingen[taal][sleutel];
+            });
+
+            // Vervang alle placeholders (grijze tekst in invoervelden)
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+                const sleutel = element.getAttribute('data-i18n-placeholder');
+                element.placeholder = vertalingen[taal][sleutel];
+            });
+
+            // Pas de lege opties in de dropdowns aan, als deze al geladen zijn
+            if (document.getElementById('chauffeur_id').options.length > 0) {
+                document.getElementById('chauffeur_id').options[0].text = vertalingen[taal]['opt_driver_kies'];
+            }
+            if (document.getElementById('vrachtwagen_id').options.length > 0) {
+                document.getElementById('vrachtwagen_id').options[0].text = vertalingen[taal]['opt_truck_kies'];
+            }
+        }
+
+        // Controleer bij het laden of er al een taal is opgeslagen
+        window.onload = function() {
+            let opgeslagenTaal = localStorage.getItem('voorkeursTaal') || 'nl';
+            document.getElementById('langSelect').value = opgeslagenTaal;
+            veranderTaal(opgeslagenTaal);
+        };
+
+
         // --- INLOG LOGICA ---
         function checkChauffeurCode() {
             const ingevoerdeCode = document.getElementById('toegangscode').value;
-            const juisteCode = "DEA2026"; // <-- HIER KUN JE DE TOEGANGSCODE VERANDEREN ALS JE WILT
+            const juisteCode = "DEA2026"; 
 
             if (ingevoerdeCode === juisteCode) {
-                // Code klopt! Verberg inlog, toon app en haal de chauffeurs op.
                 document.getElementById('chauffeurLoginScherm').style.display = 'none';
                 document.getElementById('appScherm').style.display = 'block';
                 laadStamgegevens();
@@ -100,7 +215,6 @@
             }
         }
 
-        // Zorg dat 'Enter' ook werkt bij inloggen
         document.getElementById('toegangscode').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 checkChauffeurCode();
@@ -109,18 +223,17 @@
 
 
         // --- APP LOGICA ---
-        
-        // Simpele, feilloze datum-instelling van vandaag
         document.getElementById('datum').value = new Date().toISOString().split('T')[0];
 
-        // Haal chauffeurs en vrachtwagens uit database voor in het keuzemenu
         async function laadStamgegevens() {
+            const huidigeTaal = document.getElementById('langSelect').value;
+
             // Chauffeurs laden
             const { data: chauffeurs } = await db.from('chauffeurs').select('*').order('naam');
             const chSelect = document.getElementById('chauffeur_id');
-            chSelect.innerHTML = '<option value="">Kies je naam...</option>';
+            chSelect.innerHTML = `<option value="">${vertalingen[huidigeTaal]['opt_driver_kies']}</option>`;
             if(chauffeurs) {
-                chauffeursData = chauffeurs; // We bewaren dit om later uurloon op te zoeken
+                chauffeursData = chauffeurs; 
                 chauffeurs.forEach(c => {
                     chSelect.innerHTML += `<option value="${c.id}">${c.naam}</option>`;
                 });
@@ -129,7 +242,7 @@
             // Vrachtwagens laden
             const { data: vrachtwagens } = await db.from('vrachtwagens').select('*').order('kenteken');
             const vrSelect = document.getElementById('vrachtwagen_id');
-            vrSelect.innerHTML = '<option value="">Kies vrachtwagen...</option>';
+            vrSelect.innerHTML = `<option value="">${vertalingen[huidigeTaal]['opt_truck_kies']}</option>`;
             if(vrachtwagens) {
                 vrachtwagens.forEach(v => {
                     vrSelect.innerHTML += `<option value="${v.id}">${v.kenteken}</option>`;
@@ -137,11 +250,9 @@
             }
         }
 
-        // Als de chauffeur op "Versturen" klikt
         document.getElementById('urenForm').addEventListener('submit', async function(e) {
-            e.preventDefault(); // Voorkom dat pagina herlaadt
+            e.preventDefault(); 
             
-            // Gegevens uit formulier halen
             const datum = document.getElementById('datum').value;
             const rit_omschrijving = document.getElementById('rit_omschrijving').value;
             const chauffeur_id = document.getElementById('chauffeur_id').value;
@@ -150,21 +261,18 @@
             const eindtijd = document.getElementById('eindtijd').value;
             const pauze_minuten = parseInt(document.getElementById('pauze_minuten').value) || 0;
 
-            // Bereken uren
             const start = new Date(`1970-01-01T${starttijd}:00`);
             let eind = new Date(`1970-01-01T${eindtijd}:00`);
-            if (eind < start) eind.setDate(eind.getDate() + 1); // Als de rit na middernacht eindigt
+            if (eind < start) eind.setDate(eind.getDate() + 1); 
             
             const brutoUren = (eind - start) / (1000 * 60 * 60);
             let nettoUren = brutoUren - (pauze_minuten / 60);
-            if(nettoUren < 0) nettoUren = 0; // Voorkom negatieve uren
+            if(nettoUren < 0) nettoUren = 0; 
 
-            // Zoek uurloon op voor interne loonkosten in admin paneel
             const chauffeur = chauffeursData.find(c => c.id == chauffeur_id);
             const uurloon = chauffeur && chauffeur.uurloon ? parseFloat(chauffeur.uurloon) : 0;
             const totaal_loon_bedrag = nettoUren * uurloon;
 
-            // Database data klaarmaken (zonder weeknummer, want de database doet dit zelf)
             const opslagData = {
                 datum: datum,
                 rit_omschrijving: rit_omschrijving,
@@ -178,18 +286,16 @@
                 status: 'Te controleren'
             };
 
-            // Opslaan in Supabase
             const { error } = await db.from('urenregistratie').insert(opslagData);
 
             if (error) {
-                alert("Er ging iets mis met opslaan: " + error.message);
+                alert("Fout bij opslaan: " + error.message);
             } else {
-                // Formulier leegmaken en succes tonen
                 document.getElementById('urenForm').reset();
-                document.getElementById('datum').value = new Date().toISOString().split('T')[0]; // Datum weer terugzetten
+                document.getElementById('datum').value = new Date().toISOString().split('T')[0];
                 
                 document.getElementById('succesMelding').style.display = 'block';
-                setTimeout(() => document.getElementById('succesMelding').style.display = 'none', 4000); // Melding verdwijnt na 4s
+                setTimeout(() => document.getElementById('succesMelding').style.display = 'none', 4000); 
             }
         });
     </script>
