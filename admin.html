@@ -20,8 +20,8 @@
         .header-balk .delivr-logo-container { margin-bottom: 0; }
         .header-balk .delivr-logo-svg { height: 60px; width: auto; max-width: none; }
 
-        input, select { width: 100%; padding: 12px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        label { font-weight: bold; color: #555; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
+        label { font-weight: bold; color: #555; display: block; }
         .btn-blauw { width: 100%; padding: 15px; background-color: #0056b3; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .btn-blauw:hover { background-color: #004494; }
         .uitlog-btn { background-color: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
@@ -31,9 +31,11 @@
         .btn-rood { background-color: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; height: 42px; margin-top: 22px; }
         .btn-oranje { background-color: #fd7e14; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; height: 42px; margin-top: 22px; }
         .btn-paars { background-color: #6f42c1; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; height: 42px; margin-top: 22px; }
+        .btn-paars:hover { background-color: #59339d; }
+        
         .actie-knoppen { display: flex; gap: 5px; }
         .actie-knoppen button { margin: 0; width: auto; flex: 1; padding: 8px; }
-        .tab-menu { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        .tab-menu { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ccc; padding-bottom: 10px; flex-wrap: wrap; }
         .tab-btn { padding: 12px 20px; background-color: transparent; border: none; font-weight: bold; font-size: 16px; cursor: pointer; color: #555; }
         .tab-btn.actief { color: #0056b3; border-bottom: 3px solid #0056b3; margin-bottom: -12px; }
         .header-balk { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;}
@@ -58,12 +60,21 @@
         .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; display: inline-block; }
         .status-te-controleren { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
         .status-gecontroleerd { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+
+        /* Styling voor het nieuwe Factuur Maken tabblad */
+        .factuur-grid { display: flex; gap: 25px; flex-wrap: wrap; }
+        .factuur-kolom { flex: 1; min-width: 320px; background: #fafafa; padding: 20px; border-radius: 8px; border: 1px solid #ddd; }
+        .factuur-kolom h3 { margin-top: 0; color: #0056b3; border-bottom: 2px solid #0056b3; padding-bottom: 10px; }
+        .weken-checkbox-lijst { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; margin-bottom: 20px; max-height: 220px; overflow-y: auto; padding: 5px; background: white; border: 1px solid #ccc; border-radius: 5px; }
+        .week-check-item { display: flex; align-items: center; gap: 6px; background: #e9ecef; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px; user-select: none; }
+        .week-check-item input { width: auto; margin: 0; cursor: pointer; }
+        .week-check-item:hover { background: #dde2e6; }
+        .km-box { background: #eef6ff; border: 1px solid #b8daff; padding: 15px; border-radius: 8px; margin-top: 15px; }
     </style>
 </head>
 <body>
 
 <div id="loginScherm" class="login-container">
-    <!-- Logo bovenaan het inlogscherm -->
     <div class="delivr-logo-container">
         <svg class="delivr-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460">
             <path fill="#1B315E" d="M 287,20 L 318,39 L 112,163 L 112,330 L 236,402 L 359,330 L 359,181 L 332,165 L 198,243 L 236,265 L 236,384 L 127,321 L 127,180 L 302,74 L 331,93 L 159,197 L 159,224 L 332,124 L 391,158 L 391,348 L 236,438 L 80,348 L 80,145 Z" />
@@ -86,7 +97,6 @@
 <div id="dashboardScherm" class="dashboard-container">
     <div class="header-balk">
         <div class="header-titel">
-            <!-- Logo bovenaan het dashboard -->
             <div class="delivr-logo-container">
                 <svg class="delivr-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460">
                     <path fill="#1B315E" d="M 287,20 L 318,39 L 112,163 L 112,330 L 236,402 L 359,330 L 359,181 L 332,165 L 198,243 L 236,265 L 236,384 L 127,321 L 127,180 L 302,74 L 331,93 L 159,197 L 159,224 L 332,124 L 391,158 L 391,348 L 236,438 L 80,348 L 80,145 Z" />
@@ -100,10 +110,15 @@
         </div>
         <button id="logoutBtn" class="uitlog-btn">Uitloggen</button>
     </div>
+
+    <!-- TABBLADEN MENU -->
     <div class="tab-menu">
         <button id="tabBtnRitten" class="tab-btn actief" onclick="wisselTab('ritten')">Ritten Overzicht</button>
         <button id="tabBtnStam" class="tab-btn" onclick="wisselTab('stam')">Stamgegevens</button>
+        <button id="tabBtnFactuur" class="tab-btn" onclick="wisselTab('factuur')">Factuur Maken (PDF)</button>
     </div>
+
+    <!-- TAB 1: RITTEN OVERZICHT -->
     <div id="tabRitten">
         <div class="filter-balk">
             <div class="filter-groep">
@@ -122,7 +137,7 @@
             <button class="btn-oranje" onclick="markeerGefilterdAlsGecontroleerd()">Markeer Gecontroleerd</button>
             <button class="btn-groen" onclick="exporteerNaarCSV()">CSV Download</button>
             <button class="btn-rood" onclick="genereerPDF()">Maak PDF Overzicht</button>
-            <button class="btn-paars" onclick="genereerKlantFactuur()">Maak Klantfactuur</button>
+            <button class="btn-paars" onclick="wisselTab('factuur')">Naar Klantfactuur ➔</button>
         </div>
         <div style="overflow-x: auto;">
             <table>
@@ -144,6 +159,8 @@
             </table>
         </div>
     </div>
+
+    <!-- TAB 2: STAMGEGEVENS -->
     <div id="tabStam" style="display: none;">
         <div class="stam-grid">
             <div class="stam-kolom">
@@ -169,6 +186,109 @@
                     </thead>
                     <tbody id="lijstVrachtwagens"></tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: FACTUUR MAKEN (NIEUW) -->
+    <div id="tabFactuur" style="display: none;">
+        <div class="factuur-grid">
+            <!-- Linker kolom: Selectie van Weken & Chauffeur -->
+            <div class="factuur-kolom">
+                <h3>1. Selecteer Weken & Chauffeur</h3>
+                <label>Kies Chauffeur (voor op de factuur)</label>
+                <select id="factuurChauffeur" onchange="berekenFactuurVoorbeeld()">
+                    <option value="">Alle Chauffeurs</option>
+                </select>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                    <label>Vink de weken aan die je op de PDF wilt:</label>
+                    <div>
+                        <button type="button" onclick="selecteerAlleWeken(true)" style="font-size: 12px; padding: 4px 8px; cursor: pointer;">Alles aan</button>
+                        <button type="button" onclick="selecteerAlleWeken(false)" style="font-size: 12px; padding: 4px 8px; cursor: pointer;">Alles uit</button>
+                    </div>
+                </div>
+                <div id="factuurWekenLijst" class="weken-checkbox-lijst">
+                    <!-- Wordt automatisch gevuld met beschikbare weken -->
+                </div>
+
+                <label>Uurtarief op factuur (€)</label>
+                <input type="number" step="0.01" id="factuurUurtarief" value="54" oninput="berekenFactuurVoorbeeld()">
+
+                <!-- Kilometervergoeding sectie -->
+                <div class="km-box">
+                    <h4 style="margin-top: 0; margin-bottom: 10px; color: #0056b3;">Kilometervergoeding / Extra</h4>
+                    <label>Omschrijving op PDF</label>
+                    <input type="text" id="factuurKmTekst" value="Kilometervergoeding" placeholder="Bijv: Kilometervergoeding">
+                    
+                    <label>Bedrag voor kilometervergoeding (€) <small style="font-weight: normal;">(Laat op 0 als je dit niet op de PDF wilt)</small></label>
+                    <input type="number" step="0.01" id="factuurKmBedrag" value="0" placeholder="Bijv: 150.00" oninput="berekenFactuurVoorbeeld()">
+                </div>
+            </div>
+
+            <!-- Rechter kolom: Factuurgegevens & Download -->
+            <div class="factuur-kolom">
+                <h3>2. Factuur Details</h3>
+                
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label>Factuurnummer</label>
+                        <input type="text" id="factuurNummerInput" placeholder="Bijv: 2026-15-22">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Factuurdatum</label>
+                        <input type="text" id="factuurDatumInput" placeholder="Bijv: 27-10-2026">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label>Klantnummer</label>
+                        <input type="text" id="factuurKlantNr" value="15">
+                    </div>
+                    <div style="flex: 2;">
+                        <label>Project / Dienst omschrijving</label>
+                        <input type="text" id="factuurProject" value="DHL Houten 212">
+                    </div>
+                </div>
+
+                <label>Klant Adresgegevens (Links op factuur)</label>
+                <input type="text" id="klantRegel1" value="Aan: Altena express" style="margin-bottom: 5px;">
+                <input type="text" id="klantRegel2" value="Tav David sargsjan" style="margin-bottom: 5px;">
+                <input type="text" id="klantRegel3" value="Atoomweg 54" style="margin-bottom: 5px;">
+                <input type="text" id="klantRegel4" value="3542 AB Utrecht">
+
+                <!-- Live samenvatting van het bedrag -->
+                <div style="background: #e9ecef; padding: 15px; border-radius: 8px; margin-top: 15px; margin-bottom: 20px;">
+                    <h4 style="margin-top: 0; margin-bottom: 10px;">Voorbeeld Berekening:</h4>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Totaal geselecteerde uren:</span>
+                        <strong id="voorbeeldUren">0,00 uur</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Subtotaal uren:</span>
+                        <strong id="voorbeeldUrenBedrag">€ 0,00</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Kilometervergoeding:</span>
+                        <strong id="voorbeeldKmBedrag">€ 0,00</strong>
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid #ccc;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Totaal excl. BTW:</span>
+                        <strong id="voorbeeldExcl">€ 0,00</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>21% BTW:</span>
+                        <strong id="voorbeeldBtw">€ 0,00</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 16px; color: green; margin-top: 5px;">
+                        <strong>Totaal incl. BTW:</strong>
+                        <strong id="voorbeeldIncl">€ 0,00</strong>
+                    </div>
+                </div>
+
+                <button class="btn-paars" style="width: 100%; height: 50px; font-size: 16px; margin-top: 0;" onclick="genereerKlantFactuur()">Download Klantfactuur (PDF)</button>
             </div>
         </div>
     </div>
@@ -277,8 +397,13 @@
         });
     }
 
-    // Laad het logo alvast op de achtergrond in
     krijgLogoVoorPDF();
+
+    // Standaard factuurdatum en factuurnummer klaarzetten
+    window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('factuurDatumInput').value = new Date().toLocaleDateString('nl-NL');
+        document.getElementById('factuurNummerInput').value = new Date().getFullYear() + "-15-" + String(Math.floor(Math.random() * 90) + 10);
+    });
 
     async function checkLogin() {
         const { data: { user }, error } = await db.auth.getUser();
@@ -314,8 +439,15 @@
     function wisselTab(tab) {
         document.getElementById('tabRitten').style.display = tab === 'ritten' ? 'block' : 'none';
         document.getElementById('tabStam').style.display = tab === 'stam' ? 'block' : 'none';
+        document.getElementById('tabFactuur').style.display = tab === 'factuur' ? 'block' : 'none';
+        
         document.getElementById('tabBtnRitten').className = tab === 'ritten' ? 'tab-btn actief' : 'tab-btn';
         document.getElementById('tabBtnStam').className = tab === 'stam' ? 'tab-btn actief' : 'tab-btn';
+        document.getElementById('tabBtnFactuur').className = tab === 'factuur' ? 'tab-btn actief' : 'tab-btn';
+
+        if (tab === 'factuur') {
+            berekenFactuurVoorbeeld();
+        }
     }
 
     async function laadDashboard() {
@@ -324,7 +456,10 @@
         const { data: r, error } = await db.from('urenregistratie').select('*').order('datum', { ascending: false });
         if (error) { document.getElementById('rittenTabel').innerHTML = `<tr><td colspan="10" style="color: red;">Fout bij laden: ${error.message}</td></tr>`; return; }
         alleChauffeurs = c || []; alleVrachtwagens = v || []; alleOpgeslagenRitten = r || [];
-        vulFilterOpties(); pasFiltersToe(); tekenStamgegevens(); 
+        vulFilterOpties(); 
+        pasFiltersToe(); 
+        tekenStamgegevens(); 
+        vulFactuurTabOpties();
     }
 
     function tekenStamgegevens() {
@@ -399,6 +534,76 @@
         [...weken].sort((a, b) => b - a).forEach(w => wkSelect.innerHTML += `<option value="${w}">Week ${w}</option>`);
         const perSelect = document.getElementById('filterPeriode'); perSelect.innerHTML = '<option value="">Alle Periodes</option>';
         [...periodes].sort((a, b) => b - a).forEach(p => perSelect.innerHTML += `<option value="${p}">Periode ${p} (Wk ${(p*4)-3} t/m ${p*4})</option>`);
+    }
+
+    // Vul de keuzes op het nieuwe Factuur Maken tabblad
+    function vulFactuurTabOpties() {
+        const chFactuur = document.getElementById('factuurChauffeur');
+        const huidigeKeuze = chFactuur.value;
+        chFactuur.innerHTML = '<option value="">Alle Chauffeurs</option>';
+        alleChauffeurs.forEach(c => chFactuur.innerHTML += `<option value="${c.id}">${c.naam}</option>`);
+        chFactuur.value = huidigeKeuze;
+
+        let weken = new Set();
+        alleOpgeslagenRitten.forEach(rit => { if (rit.weeknummer) weken.add(rit.weeknummer); });
+        
+        const wekenContainer = document.getElementById('factuurWekenLijst');
+        wekenContainer.innerHTML = '';
+        
+        const gesorteerdeWeken = [...weken].sort((a, b) => a - b);
+        if (gesorteerdeWeken.length === 0) {
+            wekenContainer.innerHTML = '<p style="margin: 5px; color: #777;">Nog geen weken met ritten beschikbaar.</p>';
+        } else {
+            gesorteerdeWeken.forEach(w => {
+                wekenContainer.innerHTML += `
+                    <label class="week-check-item">
+                        <input type="checkbox" class="factuur-week-cb" value="${w}" checked onchange="berekenFactuurVoorbeeld()">
+                        Week ${w}
+                    </label>
+                `;
+            });
+        }
+        berekenFactuurVoorbeeld();
+    }
+
+    function selecteerAlleWeken(aan) {
+        document.querySelectorAll('.factuur-week-cb').forEach(cb => cb.checked = aan);
+        berekenFactuurVoorbeeld();
+    }
+
+    function krijgGeselecteerdeFactuurRitten() {
+        const chId = document.getElementById('factuurChauffeur').value;
+        const geselecteerdeWeken = Array.from(document.querySelectorAll('.factuur-week-cb:checked')).map(cb => Number(cb.value));
+        
+        return alleOpgeslagenRitten.filter(rit => {
+            const matchChauffeur = !chId || rit.chauffeur_id == chId;
+            const matchWeek = geselecteerdeWeken.includes(Number(rit.weeknummer));
+            return matchChauffeur && matchWeek;
+        });
+    }
+
+    function berekenFactuurVoorbeeld() {
+        const ritten = krijgGeselecteerdeFactuurRitten();
+        const uurtarief = parseFloat(document.getElementById('factuurUurtarief').value) || 0;
+        const kmBedrag = parseFloat(document.getElementById('factuurKmBedrag').value) || 0;
+
+        let totaalUren = 0;
+        ritten.forEach(rit => {
+            totaalUren += parseFloat(rit.netto_gewerkte_uren || 0);
+        });
+
+        const subUrenBedrag = totaalUren * uurtarief;
+        const totaalExcl = subUrenBedrag + kmBedrag;
+        const btw = totaalExcl * 0.21;
+        const totaalIncl = totaalExcl + btw;
+
+        const fmt = (num) => num.toFixed(2).replace('.', ',');
+        document.getElementById('voorbeeldUren').innerText = `${fmt(totaalUren)} uur`;
+        document.getElementById('voorbeeldUrenBedrag').innerText = `€ ${fmt(subUrenBedrag)}`;
+        document.getElementById('voorbeeldKmBedrag').innerText = `€ ${fmt(kmBedrag)}`;
+        document.getElementById('voorbeeldExcl').innerText = `€ ${fmt(totaalExcl)}`;
+        document.getElementById('voorbeeldBtw').innerText = `€ ${fmt(btw)}`;
+        document.getElementById('voorbeeldIncl').innerText = `€ ${fmt(totaalIncl)}`;
     }
 
     function pasFiltersToe() {
@@ -509,9 +714,14 @@
         doc.save(`Intern_Overzicht_week_${weekTekst}_${chauffeurNaam.replace(/\s+/g, '_')}.pdf`);
     }
 
+    // KLANTFACTUUR GENEREREN VANUIT HET NIEUWE TABBLAD
     async function genereerKlantFactuur() {
-        if (laatstGefilterdeRitten.length === 0) {
-            alert("Er zijn geen ritten geselecteerd om een factuur van te maken.");
+        const factuurRitten = krijgGeselecteerdeFactuurRitten();
+        const kmBedrag = parseFloat(document.getElementById('factuurKmBedrag').value) || 0;
+        const kmTekst = document.getElementById('factuurKmTekst').value || 'Kilometervergoeding';
+
+        if (factuurRitten.length === 0 && kmBedrag <= 0) {
+            alert("Selecteer minimaal één week met ritten of vul een kilometervergoeding in om een factuur te maken.");
             return;
         }
 
@@ -540,14 +750,15 @@
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
-        doc.text("Aan: Altena express", 15, 44);
-        doc.text("Tav David sargsjan", 15, 49);
-        doc.text("Atoomweg 54", 15, 54);
-        doc.text("3542 AB Utrecht", 15, 59);
+        doc.text(document.getElementById('klantRegel1').value, 15, 44);
+        doc.text(document.getElementById('klantRegel2').value, 15, 49);
+        doc.text(document.getElementById('klantRegel3').value, 15, 54);
+        doc.text(document.getElementById('klantRegel4').value, 15, 59);
 
         // 3. FACTUUR GEGEVENS (Onder het Altena express blok)
-        const datumVandaag = new Date().toLocaleDateString('nl-NL');
-        const factuurNummer = new Date().getFullYear() + "-" + String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+        const datumVandaag = document.getElementById('factuurDatumInput').value || new Date().toLocaleDateString('nl-NL');
+        const factuurNummer = document.getElementById('factuurNummerInput').value || (new Date().getFullYear() + "-001");
+        const klantNr = document.getElementById('factuurKlantNr').value || "15";
         
         doc.setFont("helvetica", "bold");
         doc.setFontSize(14);
@@ -556,12 +767,12 @@
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(100, 100, 100); 
-        doc.text("Klant nr.:", 15, 79); doc.text("| 15", 45, 79);
+        doc.text("Klant nr.:", 15, 79); doc.text(`| ${klantNr}`, 45, 79);
         doc.text("Factuurnummer:", 15, 84); doc.text(`| ${factuurNummer}`, 45, 84);
         doc.text("Factuurdatum:", 15, 89); doc.text(`| ${datumVandaag}`, 45, 89);
         
-        let weken = [...new Set(laatstGefilterdeRitten.map(r => r.weeknummer).filter(Boolean))].sort((a,b)=>a-b);
-        const periodeTekst = weken.length > 1 ? `Week ${weken[0]} t/m ${weken[weken.length-1]}` : `Week ${weken[0] || '-'}`;
+        let weken = [...new Set(factuurRitten.map(r => r.weeknummer).filter(Boolean))].sort((a,b)=>a-b);
+        const periodeTekst = weken.length > 1 ? `Week ${weken[0]} t/m ${weken[weken.length-1]}` : (weken.length === 1 ? `Week ${weken[0]}` : '-');
         doc.text("Periode", 15, 94); doc.text(`| ${periodeTekst}`, 45, 94);
 
         // 4. BEDRIJFSGEGEVENS D.E.A. (Rechts)
@@ -581,30 +792,35 @@
         doc.setFontSize(10);
         doc.text("Hierbij belasten wij u voor de verrichte transportdiensten:", 15, 110);
         doc.setFont("helvetica", "bold");
-        doc.text("DHL Houten 212", 15, 115);
-        const chNaam = alleChauffeurs.find(c => c.id == laatstGefilterdeRitten[0].chauffeur_id)?.naam || '';
+        doc.text(document.getElementById('factuurProject').value || "DHL Houten 212", 15, 115);
+        
+        const gekozenChId = document.getElementById('factuurChauffeur').value;
+        let chNaam = '';
+        if (gekozenChId) {
+            chNaam = alleChauffeurs.find(c => c.id == gekozenChId)?.naam || '';
+        } else if (factuurRitten.length > 0) {
+            chNaam = alleChauffeurs.find(c => c.id == factuurRitten[0].chauffeur_id)?.naam || '';
+        }
         doc.text(chNaam, 15, 120);
 
         // 6. DATA VERWERKEN
         const urenPerWeek = {};
         let totaalUren = 0;
         let totaalOmzet = 0;
-        let uurtarief = 54; 
+        const uurtarief = parseFloat(document.getElementById('factuurUurtarief').value) || 54; 
 
-        laatstGefilterdeRitten.forEach(rit => {
+        factuurRitten.forEach(rit => {
             const wk = rit.weeknummer || '?';
             if (!urenPerWeek[wk]) urenPerWeek[wk] = { dagen: 0, uren: 0, bedrag: 0 };
             
             urenPerWeek[wk].dagen += 1;
             const netto = parseFloat(rit.netto_gewerkte_uren || 0);
-            const bedrag = parseFloat(rit.totaal_facturatie_bedrag || 0);
+            const bedrag = netto * uurtarief;
             
             urenPerWeek[wk].uren += netto;
             urenPerWeek[wk].bedrag += bedrag;
             totaalUren += netto;
             totaalOmzet += bedrag;
-            
-            if (netto > 0) uurtarief = bedrag / netto; 
         });
 
         // 7. TABEL GENEREREN
@@ -618,6 +834,18 @@
                 `€ ${urenPerWeek[wk].bedrag.toFixed(2).replace('.', ',')}`
             ]);
         });
+
+        // Als er kilometervergoeding is ingevuld, voeg deze toe aan de tabel en het totaal
+        if (kmBedrag > 0) {
+            tableRows.push([
+                kmTekst,
+                "",
+                "",
+                "",
+                `€ ${kmBedrag.toFixed(2).replace('.', ',')}`
+            ]);
+            totaalOmzet += kmBedrag;
+        }
 
         doc.autoTable({
             head: [
@@ -681,7 +909,7 @@
         doc.save(`Factuur_${factuurNummer}.pdf`);
     }
 
-    // RIT BEWERKEN FUNCTIES (INCLUSIEF VRACHTWAGEN EN CHAUFFEUR)
+    // RIT BEWERKEN FUNCTIES
     function openBewerkScherm(id) {
         const rit = alleOpgeslagenRitten.find(r => r.id === id);
         if (!rit) return; 
